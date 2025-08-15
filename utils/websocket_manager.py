@@ -32,7 +32,7 @@ class WebSocketManager:
         self.port = port
         self.default_timeout = default_timeout
         self.ws = None
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
 
     def set_ip(self, ip: str, port: int):
         """
