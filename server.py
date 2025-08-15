@@ -46,7 +46,12 @@ def get_topics() -> dict:
             or a message string if no topics are found.
     """
     # rosbridge service call to get topic list
-    message = {"op": "call_service", "service": "/rosapi/topics", "id": "get_topics_request_1"}
+    message = {
+        "op": "call_service",
+        "service": "/rosapi/topics",
+        "type": "rosapi/Topics",
+        "id": "get_topics_request_1",
+    }
 
     # Request topic list from rosbridge
     with ws_manager:
@@ -57,7 +62,7 @@ def get_topics() -> dict:
         # Service call failed - return error with details from values
         error_msg = response.get("values", {}).get("message", "Service call failed")
         return {"error": f"Service call failed: {error_msg}"}
-    
+
     # Return topic info if present
     if response and "values" in response:
         return response["values"]
@@ -82,7 +87,7 @@ def get_topic_type(topic: str) -> dict:
     # Validate input
     if not topic or not topic.strip():
         return {"error": "Topic name cannot be empty"}
-    
+
     # rosbridge service call to get topic type
     message = {
         "op": "call_service",
@@ -101,7 +106,7 @@ def get_topic_type(topic: str) -> dict:
         # Service call failed - return error with details from values
         error_msg = response.get("values", {}).get("message", "Service call failed")
         return {"error": f"Service call failed: {error_msg}"}
-    
+
     # Return topic type if present
     if response and "values" in response:
         topic_type = response["values"].get("type", "")
@@ -134,7 +139,7 @@ def get_message_details(message_type: str) -> dict:
     # Validate input
     if not message_type or not message_type.strip():
         return {"error": "Message type cannot be empty"}
-    
+
     # rosbridge service call to get message details
     message = {
         "op": "call_service",
@@ -153,7 +158,7 @@ def get_message_details(message_type: str) -> dict:
         # Service call failed - return error with details from values
         error_msg = response.get("values", {}).get("message", "Service call failed")
         return {"error": f"Service call failed: {error_msg}"}
-    
+
     # Return message structure if present
     if response and "values" in response:
         typedefs = response["values"].get("typedefs", [])
@@ -199,7 +204,7 @@ def get_publishers_for_topic(topic: str) -> dict:
     # Validate input
     if not topic or not topic.strip():
         return {"error": "Topic name cannot be empty"}
-    
+
     # rosbridge service call to get publishers
     message = {
         "op": "call_service",
@@ -218,7 +223,7 @@ def get_publishers_for_topic(topic: str) -> dict:
         # Service call failed - return error with details from values
         error_msg = response.get("values", {}).get("message", "Service call failed")
         return {"error": f"Service call failed: {error_msg}"}
-    
+
     # Return publishers if present
     if response and "values" in response:
         publishers = response["values"].get("publishers", [])
@@ -248,7 +253,7 @@ def get_subscribers_for_topic(topic: str) -> dict:
     # Validate input
     if not topic or not topic.strip():
         return {"error": "Topic name cannot be empty"}
-    
+
     # rosbridge service call to get subscribers
     message = {
         "op": "call_service",
@@ -267,7 +272,7 @@ def get_subscribers_for_topic(topic: str) -> dict:
         # Service call failed - return error with details from values
         error_msg = response.get("values", {}).get("message", "Service call failed")
         return {"error": f"Service call failed: {error_msg}"}
-    
+
     # Return subscribers if present
     if response and "values" in response:
         subscribers = response["values"].get("subscribers", [])
@@ -319,7 +324,7 @@ def subscribe_once(topic: str = "", msg_type: str = "", timeout: Optional[float]
 
         # Use default timeout if none specified
         actual_timeout = timeout if timeout is not None else ws_manager.default_timeout
-        
+
         # Loop until we receive the first message or timeout
         end_time = time.time() + actual_timeout
         while time.time() < end_time:
@@ -327,18 +332,18 @@ def subscribe_once(topic: str = "", msg_type: str = "", timeout: Optional[float]
             if response:
                 try:
                     msg_data = json.loads(response)
-                    
+
                     # Check for status errors from rosbridge
                     if msg_data.get("op") == "status" and msg_data.get("level") == "error":
                         return {"error": f"Rosbridge error: {msg_data.get('msg', 'Unknown error')}"}
-                    
+
                     # Check for the first published message
                     if msg_data.get("op") == "publish" and msg_data.get("topic") == topic:
                         # Unsubscribe before returning the message
                         unsubscribe_msg = {"op": "unsubscribe", "topic": topic}
                         ws_manager.send(unsubscribe_msg)
                         return {"msg": msg_data.get("msg", {})}
-                        
+
                 except json.JSONDecodeError:
                     # skip malformed data
                     continue
@@ -479,16 +484,16 @@ def subscribe_for_duration(
             if response:
                 try:
                     msg_data = json.loads(response)
-                    
+
                     # Check for status errors from rosbridge
                     if msg_data.get("op") == "status" and msg_data.get("level") == "error":
                         status_errors.append(msg_data.get("msg", "Unknown error"))
                         continue
-                    
+
                     # Check for published messages matching our topic
                     if msg_data.get("op") == "publish" and msg_data.get("topic") == topic:
                         collected_messages.append(msg_data.get("msg", {}))
-                        
+
                 except json.JSONDecodeError:
                     # skip malformed data
                     continue
@@ -640,7 +645,7 @@ def get_services() -> dict:
         # Service call failed - return error with details from values
         error_msg = response.get("values", {}).get("message", "Service call failed")
         return {"error": f"Service call failed: {error_msg}"}
-    
+
     # Return service info if present
     if response and "values" in response:
         services = response["values"].get("services", [])
@@ -668,7 +673,7 @@ def get_service_type(service: str) -> dict:
     # Validate input
     if not service or not service.strip():
         return {"error": "Service name cannot be empty"}
-    
+
     # rosbridge service call to get service type
     message = {
         "op": "call_service",
@@ -687,7 +692,7 @@ def get_service_type(service: str) -> dict:
         # Service call failed - return error with details from values
         error_msg = response.get("values", {}).get("message", "Service call failed")
         return {"error": f"Service call failed: {error_msg}"}
-    
+
     # Return service type if present
     if response and "values" in response:
         service_type = response["values"].get("type", "")
@@ -719,7 +724,7 @@ def get_service_details(service_type: str) -> dict:
     # Validate input
     if not service_type or not service_type.strip():
         return {"error": "Service type cannot be empty"}
-    
+
     result = {"service_type": service_type, "request": {}, "response": {}}
 
     # Get both request and response details in a single WebSocket context
@@ -794,7 +799,7 @@ def get_service_providers(service: str) -> dict:
     # Validate input
     if not service or not service.strip():
         return {"error": "Service name cannot be empty"}
-    
+
     # rosbridge service call to get service providers
     message = {
         "op": "call_service",
@@ -891,9 +896,9 @@ def inspect_all_services() -> dict:
             }
 
         return {
-            "total_services": len(services), 
+            "total_services": len(services),
             "services": service_details,
-            "service_errors": service_errors  # Include any errors encountered during inspection
+            "service_errors": service_errors,  # Include any errors encountered during inspection
         }
 
 
@@ -905,7 +910,9 @@ def inspect_all_services() -> dict:
         "call_service('/slow_service', 'my_package/SlowService', {}, timeout=10.0)  # Specify timeout only for slow services"
     )
 )
-def call_service(service_name: str, service_type: str, request: dict, timeout: Optional[float] = None) -> dict:
+def call_service(
+    service_name: str, service_type: str, request: dict, timeout: Optional[float] = None
+) -> dict:
     """
     Call a ROS service with specified request data.
 
@@ -941,7 +948,7 @@ def call_service(service_name: str, service_type: str, request: dict, timeout: O
             "success": False,
             "error": f"Service call failed: {error_msg}",
         }
-    
+
     # Return service response if present
     if response:
         if response.get("op") == "service_response":
