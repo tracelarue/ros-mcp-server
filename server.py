@@ -722,49 +722,51 @@ def get_service_details(service_type: str) -> dict:
     
     result = {"service_type": service_type, "request": {}, "response": {}}
 
-    # Get request details
-    request_message = {
-        "op": "call_service",
-        "service": "/rosapi/service_request_details",
-        "type": "rosapi/ServiceRequestDetails",
-        "args": {"type": service_type},
-        "id": f"get_service_details_request_{service_type.replace('/', '_')}",
-    }
+    # Get both request and response details in a single WebSocket context
+    with ws_manager:
+        # Get request details
+        request_message = {
+            "op": "call_service",
+            "service": "/rosapi/service_request_details",
+            "type": "rosapi/ServiceRequestDetails",
+            "args": {"type": service_type},
+            "id": f"get_service_details_request_{service_type.replace('/', '_')}",
+        }
 
-    request_response = ws_manager.request(request_message)
-    if request_response and "values" in request_response:
-        typedefs = request_response["values"].get("typedefs", [])
-        if typedefs:
-            for typedef in typedefs:
-                field_names = typedef.get("fieldnames", [])
-                field_types = typedef.get("fieldtypes", [])
-                fields = {}
-                for name, ftype in zip(field_names, field_types):
-                    fields[name] = ftype
-                result["request"] = {"fields": fields, "field_count": len(fields)}
+        request_response = ws_manager.request(request_message)
+        if request_response and "values" in request_response:
+            typedefs = request_response["values"].get("typedefs", [])
+            if typedefs:
+                for typedef in typedefs:
+                    field_names = typedef.get("fieldnames", [])
+                    field_types = typedef.get("fieldtypes", [])
+                    fields = {}
+                    for name, ftype in zip(field_names, field_types):
+                        fields[name] = ftype
+                    result["request"] = {"fields": fields, "field_count": len(fields)}
 
-    # Get response details
-    response_message = {
-        "op": "call_service",
-        "service": "/rosapi/service_response_details",
-        "type": "rosapi/ServiceResponseDetails",
-        "args": {"type": service_type},
-        "id": f"get_service_details_response_{service_type.replace('/', '_')}",
-    }
+        # Get response details
+        response_message = {
+            "op": "call_service",
+            "service": "/rosapi/service_response_details",
+            "type": "rosapi/ServiceResponseDetails",
+            "args": {"type": service_type},
+            "id": f"get_service_details_response_{service_type.replace('/', '_')}",
+        }
 
-    response_response = ws_manager.request(response_message)
-    if response_response and "values" in response_response:
-        typedefs = response_response["values"].get("typedefs", [])
-        if typedefs:
-            for typedef in typedefs:
-                field_names = typedef.get("fieldnames", [])
-                field_types = typedef.get("fieldtypes", [])
-                fields = {}
-                for name, ftype in zip(field_names, field_types):
-                    fields[name] = ftype
-                result["response"] = {"fields": fields, "field_count": len(fields)}
+        response_response = ws_manager.request(response_message)
+        if response_response and "values" in response_response:
+            typedefs = response_response["values"].get("typedefs", [])
+            if typedefs:
+                for typedef in typedefs:
+                    field_names = typedef.get("fieldnames", [])
+                    field_types = typedef.get("fieldtypes", [])
+                    fields = {}
+                    for name, ftype in zip(field_names, field_types):
+                        fields[name] = ftype
+                    result["response"] = {"fields": fields, "field_count": len(fields)}
 
-        # Check if we got any data
+    # Check if we got any data
     if not result["request"] and not result["response"]:
         return {"error": f"Service type {service_type} not found or has no definition"}
 
