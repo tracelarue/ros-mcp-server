@@ -52,6 +52,12 @@ def get_topics() -> dict:
     with ws_manager:
         response = ws_manager.request(message)
 
+    # Check for service response errors first
+    if response and "result" in response and not response["result"]:
+        # Service call failed - return error with details from values
+        error_msg = response.get("values", {}).get("message", "Service call failed")
+        return {"error": f"Service call failed: {error_msg}"}
+    
     # Return topic info if present
     if response and "values" in response:
         return response["values"]
@@ -86,6 +92,12 @@ def get_topic_type(topic: str) -> dict:
     with ws_manager:
         response = ws_manager.request(message)
 
+    # Check for service response errors first
+    if response and "result" in response and not response["result"]:
+        # Service call failed - return error with details from values
+        error_msg = response.get("values", {}).get("message", "Service call failed")
+        return {"error": f"Service call failed: {error_msg}"}
+    
     # Return topic type if present
     if response and "values" in response:
         topic_type = response["values"].get("type", "")
@@ -128,6 +140,12 @@ def get_message_details(message_type: str) -> dict:
     with ws_manager:
         response = ws_manager.request(message)
 
+    # Check for service response errors first
+    if response and "result" in response and not response["result"]:
+        # Service call failed - return error with details from values
+        error_msg = response.get("values", {}).get("message", "Service call failed")
+        return {"error": f"Service call failed: {error_msg}"}
+    
     # Return message structure if present
     if response and "values" in response:
         typedefs = response["values"].get("typedefs", [])
@@ -183,6 +201,12 @@ def get_publishers_for_topic(topic: str) -> dict:
     with ws_manager:
         response = ws_manager.request(message)
 
+    # Check for service response errors first
+    if response and "result" in response and not response["result"]:
+        # Service call failed - return error with details from values
+        error_msg = response.get("values", {}).get("message", "Service call failed")
+        return {"error": f"Service call failed: {error_msg}"}
+    
     # Return publishers if present
     if response and "values" in response:
         publishers = response["values"].get("publishers", [])
@@ -222,6 +246,12 @@ def get_subscribers_for_topic(topic: str) -> dict:
     with ws_manager:
         response = ws_manager.request(message)
 
+    # Check for service response errors first
+    if response and "result" in response and not response["result"]:
+        # Service call failed - return error with details from values
+        error_msg = response.get("values", {}).get("message", "Service call failed")
+        return {"error": f"Service call failed: {error_msg}"}
+    
     # Return subscribers if present
     if response and "values" in response:
         subscribers = response["values"].get("subscribers", [])
@@ -489,6 +519,12 @@ def get_services() -> dict:
     with ws_manager:
         response = ws_manager.request(message)
 
+    # Check for service response errors first
+    if response and "result" in response and not response["result"]:
+        # Service call failed - return error with details from values
+        error_msg = response.get("values", {}).get("message", "Service call failed")
+        return {"error": f"Service call failed: {error_msg}"}
+    
     # Return service info if present
     if response and "values" in response:
         services = response["values"].get("services", [])
@@ -526,6 +562,12 @@ def get_service_type(service: str) -> dict:
     with ws_manager:
         response = ws_manager.request(message)
 
+    # Check for service response errors first
+    if response and "result" in response and not response["result"]:
+        # Service call failed - return error with details from values
+        error_msg = response.get("values", {}).get("message", "Service call failed")
+        return {"error": f"Service call failed: {error_msg}"}
+    
     # Return service type if present
     if response and "values" in response:
         service_type = response["values"].get("type", "")
@@ -748,6 +790,17 @@ def call_service(service_name: str, service_type: str, request: dict) -> dict:
     with ws_manager:
         response = ws_manager.request(message)
 
+    # Check for service response errors first
+    if response and "result" in response and not response["result"]:
+        # Service call failed - return error with details from values
+        error_msg = response.get("values", {}).get("message", "Service call failed")
+        return {
+            "service": service_name,
+            "service_type": service_type,
+            "success": False,
+            "error": f"Service call failed: {error_msg}",
+        }
+    
     # Return service response if present
     if response:
         if response.get("op") == "service_response":
