@@ -264,16 +264,17 @@ def get_subscribers_for_topic(topic: str) -> dict:
     description=(
         "Subscribe to a ROS topic and return the first message received.\n"
         "Example:\n"
-        "subscribe_once(topic='/cmd_vel', msg_type='geometry_msgs/msg/TwistStamped')"
+        "subscribe_once(topic='/cmd_vel', msg_type='geometry_msgs/msg/TwistStamped', timeout=10.0)"
     )
 )
-def subscribe_once(topic: str = "", msg_type: str = "") -> dict:
+def subscribe_once(topic: str = "", msg_type: str = "", timeout: Optional[float] = None) -> dict:
     """
     Subscribe to a given ROS topic via rosbridge and return the first message received.
 
     Args:
         topic (str): The ROS topic name (e.g., "/cmd_vel", "/joint_states").
         msg_type (str): The ROS message type (e.g., "geometry_msgs/Twist").
+        timeout (Optional[float]): Timeout in seconds. If None, uses the default timeout.
 
     Returns:
         dict:
@@ -292,20 +293,40 @@ def subscribe_once(topic: str = "", msg_type: str = "") -> dict:
         "queue_length": 1,  # request just one message
     }
 
-    # Send subscription request & wait for a single response
+    # Subscribe and wait for the first message
     with ws_manager:
-        response = ws_manager.request(subscribe_msg)
+        # Send subscription request
+        send_error = ws_manager.send(subscribe_msg)
+        if send_error:
+            return {"error": f"Failed to subscribe: {send_error}"}
 
-    # Handle rosbridge response
-    if "error" in response:
-        return response  # structured error from request()
+        # Use default timeout if none specified
+        actual_timeout = timeout if timeout is not None else ws_manager.default_timeout
+        
+        # Loop until we receive the first message or timeout
+        end_time = time.time() + actual_timeout
+        while time.time() < end_time:
+            response = ws_manager.receive(timeout=0.5)  # non-blocking small timeout
+            if response:
+                try:
+                    msg_data = json.loads(response)
+                    
+                    # Check for status errors from rosbridge
+                    if msg_data.get("op") == "status" and msg_data.get("level") == "error":
+                        return {"error": f"Rosbridge error: {msg_data.get('msg', 'Unknown error')}"}
+                    
+                    # Check for the first published message
+                    if msg_data.get("op") == "publish" and msg_data.get("topic") == topic:
+                        return {"msg": msg_data.get("msg", {})}
+                        
+                except json.JSONDecodeError:
+                    # skip malformed data
+                    continue
 
-    # If we got a valid ROS message
-    if "msg" in response:
-        return {"msg": response["msg"]}
-
-    # If the response is something unexpected, return raw
-    return {"error": "unexpected_response_format", "raw": response}
+        # Timeout - unsubscribe and return error
+        unsubscribe_msg = {"op": "unsubscribe", "topic": topic}
+        ws_manager.send(unsubscribe_msg)
+        return {"error": "Timeout waiting for message from topic"}
 
 
 @mcp.tool(
