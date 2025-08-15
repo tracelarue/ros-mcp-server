@@ -429,6 +429,7 @@ def subscribe_for_duration(
             return {"error": f"Failed to subscribe: {send_error}"}
 
         collected_messages = []
+        status_errors = []
         end_time = time.time() + duration
 
         # Loop until duration expires or we hit max_messages
@@ -437,9 +438,16 @@ def subscribe_for_duration(
             if response:
                 try:
                     msg_data = json.loads(response)
-                    # rosbridge subscription responses include "msg" field
-                    if "msg" in msg_data:
-                        collected_messages.append(msg_data["msg"])
+                    
+                    # Check for status errors from rosbridge
+                    if msg_data.get("op") == "status" and msg_data.get("level") == "error":
+                        status_errors.append(msg_data.get("msg", "Unknown error"))
+                        continue
+                    
+                    # Check for published messages matching our topic
+                    if msg_data.get("op") == "publish" and msg_data.get("topic") == topic:
+                        collected_messages.append(msg_data.get("msg", {}))
+                        
                 except json.JSONDecodeError:
                     # skip malformed data
                     continue
@@ -452,6 +460,7 @@ def subscribe_for_duration(
         "topic": topic,
         "collected_count": len(collected_messages),
         "messages": collected_messages,
+        "status_errors": status_errors,  # Include any errors encountered during collection
     }
 
 
