@@ -4,7 +4,7 @@ from typing import Optional
 
 from mcp.server.fastmcp import FastMCP
 
-from utils.websocket_manager import WebSocketManager
+from utils.websocket_manager import WebSocketManager, parse_json
 from utils.network_utils import ping_ip_and_port
 
 # ROS bridge connection settings
@@ -286,10 +286,17 @@ def get_subscribers_for_topic(topic: str) -> dict:
         "Subscribe to a ROS topic and return the first message received.\n"
         "Example:\n"
         "subscribe_once(topic='/cmd_vel', msg_type='geometry_msgs/msg/TwistStamped')\n"
-        "subscribe_once(topic='/slow_topic', msg_type='my_package/SlowMsg', timeout=10.0)  # Specify timeout only if topic publishes infrequently"
+        "subscribe_once(topic='/slow_topic', msg_type='my_package/SlowMsg', timeout=10.0)  # Specify timeout only if topic publishes infrequently\n"
+        "subscribe_once(topic='/high_rate_topic', msg_type='sensor_msgs/Image', queue_length=5, throttle_rate_ms=100)  # Control message buffering and rate"
     )
 )
-def subscribe_once(topic: str = "", msg_type: str = "", timeout: Optional[float] = None) -> dict:
+def subscribe_once(
+    topic: str = "",
+    msg_type: str = "",
+    timeout: Optional[float] = None,
+    queue_length: Optional[int] = None,
+    throttle_rate_ms: Optional[int] = None,
+) -> dict:
     """
     Subscribe to a given ROS topic via rosbridge and return the first message received.
 
@@ -297,6 +304,8 @@ def subscribe_once(topic: str = "", msg_type: str = "", timeout: Optional[float]
         topic (str): The ROS topic name (e.g., "/cmd_vel", "/joint_states").
         msg_type (str): The ROS message type (e.g., "geometry_msgs/Twist").
         timeout (Optional[float]): Timeout in seconds. If None, uses the default timeout.
+        queue_length (Optional[int]): How many messages to buffer before dropping old ones. Must be ≥ 1.
+        throttle_rate_ms (Optional[int]): Minimum interval between messages in milliseconds. Must be ≥ 0.
 
     Returns:
         dict:
@@ -307,13 +316,28 @@ def subscribe_once(topic: str = "", msg_type: str = "", timeout: Optional[float]
     if not topic or not msg_type:
         return {"error": "Missing required arguments: topic and msg_type must be provided."}
 
+    # Validate optional parameters
+    if queue_length is not None and (not isinstance(queue_length, int) or queue_length < 1):
+        return {"error": "queue_length must be an integer ≥ 1"}
+
+    if throttle_rate_ms is not None and (
+        not isinstance(throttle_rate_ms, int) or throttle_rate_ms < 0
+    ):
+        return {"error": "throttle_rate_ms must be an integer ≥ 0"}
+
     # Construct the rosbridge subscribe message
-    subscribe_msg = {
+    subscribe_msg: dict = {
         "op": "subscribe",
         "topic": topic,
         "type": msg_type,
-        "queue_length": 1,  # request just one message
     }
+
+    # Add optional parameters if provided
+    if queue_length is not None:
+        subscribe_msg["queue_length"] = queue_length
+
+    if throttle_rate_ms is not None:
+        subscribe_msg["throttle_rate"] = throttle_rate_ms
 
     # Subscribe and wait for the first message
     with ws_manager:
@@ -329,24 +353,23 @@ def subscribe_once(topic: str = "", msg_type: str = "", timeout: Optional[float]
         end_time = time.time() + actual_timeout
         while time.time() < end_time:
             response = ws_manager.receive(timeout=0.5)  # non-blocking small timeout
-            if response:
-                try:
-                    msg_data = json.loads(response)
+            if response is None:
+                continue  # idle timeout: no frame this tick
 
-                    # Check for status errors from rosbridge
-                    if msg_data.get("op") == "status" and msg_data.get("level") == "error":
-                        return {"error": f"Rosbridge error: {msg_data.get('msg', 'Unknown error')}"}
+            msg_data = parse_json(response)
+            if not msg_data:
+                continue  # non-JSON or empty
 
-                    # Check for the first published message
-                    if msg_data.get("op") == "publish" and msg_data.get("topic") == topic:
-                        # Unsubscribe before returning the message
-                        unsubscribe_msg = {"op": "unsubscribe", "topic": topic}
-                        ws_manager.send(unsubscribe_msg)
-                        return {"msg": msg_data.get("msg", {})}
+            # Check for status errors from rosbridge
+            if msg_data.get("op") == "status" and msg_data.get("level") == "error":
+                return {"error": f"Rosbridge error: {msg_data.get('msg', 'Unknown error')}"}
 
-                except json.JSONDecodeError:
-                    # skip malformed data
-                    continue
+            # Check for the first published message
+            if msg_data.get("op") == "publish" and msg_data.get("topic") == topic:
+                # Unsubscribe before returning the message
+                unsubscribe_msg = {"op": "unsubscribe", "topic": topic}
+                ws_manager.send(unsubscribe_msg)
+                return {"msg": msg_data.get("msg", {})}
 
         # Timeout - unsubscribe and return error
         unsubscribe_msg = {"op": "unsubscribe", "topic": topic}
@@ -434,11 +457,17 @@ def publish_once(topic: str = "", msg_type: str = "", msg: dict = {}) -> dict:
     description=(
         "Subscribe to a topic for a duration and collect messages.\n"
         "Example:\n"
-        "subscribe_for_duration(topic='/cmd_vel', msg_type='geometry_msgs/msg/TwistStamped', duration=5, max_messages=10)"
+        "subscribe_for_duration(topic='/cmd_vel', msg_type='geometry_msgs/msg/TwistStamped', duration=5, max_messages=10)\n"
+        "subscribe_for_duration(topic='/high_rate_topic', msg_type='sensor_msgs/Image', duration=10, queue_length=5, throttle_rate_ms=100)  # Control message buffering and rate"
     )
 )
 def subscribe_for_duration(
-    topic: str = "", msg_type: str = "", duration: float = 5.0, max_messages: int = 100
+    topic: str = "",
+    msg_type: str = "",
+    duration: float = 5.0,
+    max_messages: int = 100,
+    queue_length: Optional[int] = None,
+    throttle_rate_ms: Optional[int] = None,
 ) -> dict:
     """
     Subscribe to a ROS topic via rosbridge for a fixed duration and collect messages.
@@ -448,6 +477,8 @@ def subscribe_for_duration(
         msg_type (str): ROS message type (e.g. "geometry_msgs/Twist")
         duration (float): How long (seconds) to listen for messages
         max_messages (int): Maximum number of messages to collect before stopping
+        queue_length (Optional[int]): How many messages to buffer before dropping old ones. Must be ≥ 1.
+        throttle_rate_ms (Optional[int]): Minimum interval between messages in milliseconds. Must be ≥ 0.
 
     Returns:
         dict:
@@ -461,13 +492,28 @@ def subscribe_for_duration(
     if not topic or not msg_type:
         return {"error": "Missing required arguments: topic and msg_type must be provided."}
 
+    # Validate optional parameters
+    if queue_length is not None and (not isinstance(queue_length, int) or queue_length < 1):
+        return {"error": "queue_length must be an integer ≥ 1"}
+
+    if throttle_rate_ms is not None and (
+        not isinstance(throttle_rate_ms, int) or throttle_rate_ms < 0
+    ):
+        return {"error": "throttle_rate_ms must be an integer ≥ 0"}
+
     # Send subscription request
-    subscribe_msg = {
+    subscribe_msg: dict = {
         "op": "subscribe",
         "topic": topic,
         "type": msg_type,
-        "queue_length": 10,  # allow some buffering
     }
+
+    # Add optional parameters if provided
+    if queue_length is not None:
+        subscribe_msg["queue_length"] = queue_length
+
+    if throttle_rate_ms is not None:
+        subscribe_msg["throttle_rate"] = throttle_rate_ms
 
     with ws_manager:
         send_error = ws_manager.send(subscribe_msg)
@@ -481,22 +527,21 @@ def subscribe_for_duration(
         # Loop until duration expires or we hit max_messages
         while time.time() < end_time and len(collected_messages) < max_messages:
             response = ws_manager.receive(timeout=0.5)  # non-blocking small timeout
-            if response:
-                try:
-                    msg_data = json.loads(response)
+            if response is None:
+                continue  # idle timeout: no frame this tick
 
-                    # Check for status errors from rosbridge
-                    if msg_data.get("op") == "status" and msg_data.get("level") == "error":
-                        status_errors.append(msg_data.get("msg", "Unknown error"))
-                        continue
+            msg_data = parse_json(response)
+            if not msg_data:
+                continue  # non-JSON or empty
 
-                    # Check for published messages matching our topic
-                    if msg_data.get("op") == "publish" and msg_data.get("topic") == topic:
-                        collected_messages.append(msg_data.get("msg", {}))
+            # Check for status errors from rosbridge
+            if msg_data.get("op") == "status" and msg_data.get("level") == "error":
+                status_errors.append(msg_data.get("msg", "Unknown error"))
+                continue
 
-                except json.JSONDecodeError:
-                    # skip malformed data
-                    continue
+            # Check for published messages matching our topic
+            if msg_data.get("op") == "publish" and msg_data.get("topic") == topic:
+                collected_messages.append(msg_data.get("msg", {}))
 
         # Unsubscribe when done
         unsubscribe_msg = {"op": "unsubscribe", "topic": topic}

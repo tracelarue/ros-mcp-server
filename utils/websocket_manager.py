@@ -13,14 +13,15 @@ def parse_json(raw: Optional[Union[str, bytes]]) -> Optional[dict]:
         raw: JSON string, bytes, or None
 
     Returns:
-        Parsed dict if successful, None if raw is None or parsing fails
+        Parsed dict if successful, None if raw is None, parsing fails, or result is not a dict
     """
     if raw is None:
         return None
     if isinstance(raw, bytes):
         raw = raw.decode("utf-8", errors="replace")
     try:
-        return json.loads(raw)
+        result = json.loads(raw)
+        return result if isinstance(result, dict) else None
     except (json.JSONDecodeError, TypeError):
         return None
 
