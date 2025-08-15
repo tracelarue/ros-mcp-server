@@ -844,6 +844,7 @@ def inspect_all_services() -> dict:
         service_details = {}
 
         # Get details for each service
+        service_errors = []
         for service in services:
             # Get service type
             type_message = {
@@ -858,6 +859,8 @@ def inspect_all_services() -> dict:
             service_type = ""
             if type_response and "values" in type_response:
                 service_type = type_response["values"].get("type", "unknown")
+            elif type_response and "error" in type_response:
+                service_errors.append(f"Service {service}: {type_response['error']}")
 
             # Get service providers
             providers_message = {
@@ -872,6 +875,8 @@ def inspect_all_services() -> dict:
             providers = []
             if providers_response and "values" in providers_response:
                 providers = providers_response["values"].get("providers", [])
+            elif providers_response and "error" in providers_response:
+                service_errors.append(f"Service {service} providers: {providers_response['error']}")
 
             service_details[service] = {
                 "type": service_type,
@@ -879,7 +884,11 @@ def inspect_all_services() -> dict:
                 "provider_count": len(providers),
             }
 
-        return {"total_services": len(services), "services": service_details}
+        return {
+            "total_services": len(services), 
+            "services": service_details,
+            "service_errors": service_errors  # Include any errors encountered during inspection
+        }
 
 
 @mcp.tool(
