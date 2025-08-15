@@ -79,6 +79,10 @@ def get_topic_type(topic: str) -> dict:
         dict: Contains the 'type' field with the message type,
             or an error message if topic doesn't exist.
     """
+    # Validate input
+    if not topic or not topic.strip():
+        return {"error": "Topic name cannot be empty"}
+    
     # rosbridge service call to get topic type
     message = {
         "op": "call_service",
@@ -127,6 +131,10 @@ def get_message_details(message_type: str) -> dict:
         dict: Contains the message structure with field names and types,
             or an error message if the message type doesn't exist.
     """
+    # Validate input
+    if not message_type or not message_type.strip():
+        return {"error": "Message type cannot be empty"}
+    
     # rosbridge service call to get message details
     message = {
         "op": "call_service",
@@ -188,6 +196,10 @@ def get_publishers_for_topic(topic: str) -> dict:
         dict: Contains list of publisher node names,
             or a message if no publishers found.
     """
+    # Validate input
+    if not topic or not topic.strip():
+        return {"error": "Topic name cannot be empty"}
+    
     # rosbridge service call to get publishers
     message = {
         "op": "call_service",
@@ -233,6 +245,10 @@ def get_subscribers_for_topic(topic: str) -> dict:
         dict: Contains list of subscriber node names,
             or a message if no subscribers found.
     """
+    # Validate input
+    if not topic or not topic.strip():
+        return {"error": "Topic name cannot be empty"}
+    
     # rosbridge service call to get subscribers
     message = {
         "op": "call_service",
@@ -645,6 +661,10 @@ def get_service_type(service: str) -> dict:
         dict: Contains the service type,
             or an error message if service doesn't exist.
     """
+    # Validate input
+    if not service or not service.strip():
+        return {"error": "Service name cannot be empty"}
+    
     # rosbridge service call to get service type
     message = {
         "op": "call_service",
@@ -692,6 +712,10 @@ def get_service_details(service_type: str) -> dict:
     Returns:
         dict: Contains complete service definition with request and response structures.
     """
+    # Validate input
+    if not service_type or not service_type.strip():
+        return {"error": "Service type cannot be empty"}
+    
     result = {"service_type": service_type, "request": {}, "response": {}}
 
     # Get request details
@@ -761,6 +785,10 @@ def get_service_providers(service: str) -> dict:
         dict: Contains list of nodes providing this service,
             or an error message if service doesn't exist.
     """
+    # Validate input
+    if not service or not service.strip():
+        return {"error": "Service name cannot be empty"}
+    
     # rosbridge service call to get service providers
     message = {
         "op": "call_service",
