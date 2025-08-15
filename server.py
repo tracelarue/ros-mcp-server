@@ -357,31 +357,52 @@ def publish_once(topic: str = "", msg_type: str = "", msg: dict = {}) -> dict:
             "error": "Missing required arguments: topic, msg_type, and msg must all be provided."
         }
 
-    # Construct rosbridge publish message
-    publish_msg = {"op": "publish", "topic": topic, "msg": msg}
-
-    # Send the message via ws_manager
+    # Use proper advertise → publish → unadvertise pattern
     with ws_manager:
+        # 1. Advertise the topic
+        advertise_msg = {"op": "advertise", "topic": topic, "type": msg_type}
+        send_error = ws_manager.send(advertise_msg)
+        if send_error:
+            return {"error": f"Failed to advertise topic: {send_error}"}
+
+        # Check for advertise response/errors
+        response = ws_manager.receive(timeout=1.0)
+        if response:
+            try:
+                msg_data = json.loads(response)
+                if msg_data.get("op") == "status" and msg_data.get("level") == "error":
+                    return {"error": f"Advertise failed: {msg_data.get('msg', 'Unknown error')}"}
+            except json.JSONDecodeError:
+                pass  # Non-JSON response is usually fine for advertise
+
+        # 2. Publish the message
+        publish_msg = {"op": "publish", "topic": topic, "msg": msg}
         send_error = ws_manager.send(publish_msg)
         if send_error:
-            return {"error": send_error}
+            # Try to unadvertise even if publish failed
+            ws_manager.send({"op": "unadvertise", "topic": topic})
+            return {"error": f"Failed to publish message: {send_error}"}
 
-        # rosbridge typically does NOT respond to publish requests
-        # But we can still attempt to receive in case of errors
-        response = ws_manager.receive()
+        # Check for publish response/errors
+        response = ws_manager.receive(timeout=1.0)
+        if response:
+            try:
+                msg_data = json.loads(response)
+                if msg_data.get("op") == "status" and msg_data.get("level") == "error":
+                    # Unadvertise before returning error
+                    ws_manager.send({"op": "unadvertise", "topic": topic})
+                    return {"error": f"Publish failed: {msg_data.get('msg', 'Unknown error')}"}
+            except json.JSONDecodeError:
+                pass  # Non-JSON response is usually fine for publish
 
-    # No response is normal for publish
-    if response is None or response.strip() == "":
-        return {
-            "success": True,
-            "note": "No response is expected for publish, so we have no confirmation that the message was published.",
-        }
+        # 3. Unadvertise the topic
+        unadvertise_msg = {"op": "unadvertise", "topic": topic}
+        ws_manager.send(unadvertise_msg)
 
-    # If rosbridge *did* send something back, parse it
-    try:
-        return json.loads(response)
-    except json.JSONDecodeError:
-        return {"error": "invalid_json", "raw": response}
+    return {
+        "success": True,
+        "note": "Message published using advertise → publish → unadvertise pattern",
+    }
 
 
 @mcp.tool(
@@ -503,8 +524,28 @@ def publish_for_durations(
     if len(messages) != len(durations):
         return {"error": "messages and durations must have the same length"}
 
-    # Iterate and publish each message with a delay
+    # Use proper advertise → publish → unadvertise pattern
     with ws_manager:
+        # 1. Advertise the topic
+        advertise_msg = {"op": "advertise", "topic": topic, "type": msg_type}
+        send_error = ws_manager.send(advertise_msg)
+        if send_error:
+            return {"error": f"Failed to advertise topic: {send_error}"}
+
+        # Check for advertise response/errors
+        response = ws_manager.receive(timeout=1.0)
+        if response:
+            try:
+                msg_data = json.loads(response)
+                if msg_data.get("op") == "status" and msg_data.get("level") == "error":
+                    return {"error": f"Advertise failed: {msg_data.get('msg', 'Unknown error')}"}
+            except json.JSONDecodeError:
+                pass  # Non-JSON response is usually fine for advertise
+
+        published_count = 0
+        errors = []
+
+        # 2. Iterate and publish each message with a delay
         for i, (msg, delay) in enumerate(zip(messages, durations)):
             # Build the rosbridge publish message
             publish_msg = {"op": "publish", "topic": topic, "msg": msg}
@@ -512,12 +553,37 @@ def publish_for_durations(
             # Send it
             send_error = ws_manager.send(publish_msg)
             if send_error:
-                return {"error": f"Failed at message {i + 1}: {send_error}", "published_count": i}
+                errors.append(f"Message {i + 1}: {send_error}")
+                continue  # Continue with next message instead of failing completely
+
+            # Check for publish response/errors
+            response = ws_manager.receive(timeout=1.0)
+            if response:
+                try:
+                    msg_data = json.loads(response)
+                    if msg_data.get("op") == "status" and msg_data.get("level") == "error":
+                        errors.append(f"Message {i + 1}: {msg_data.get('msg', 'Unknown error')}")
+                        continue
+                except json.JSONDecodeError:
+                    pass  # Non-JSON response is usually fine for publish
+
+            published_count += 1
 
             # Wait before sending the next message
             time.sleep(delay)
 
-    return {"success": True, "published_count": len(messages), "topic": topic, "msg_type": msg_type}
+        # 3. Unadvertise the topic
+        unadvertise_msg = {"op": "unadvertise", "topic": topic}
+        ws_manager.send(unadvertise_msg)
+
+    return {
+        "success": True,
+        "published_count": published_count,
+        "total_messages": len(messages),
+        "topic": topic,
+        "msg_type": msg_type,
+        "errors": errors,  # Include any errors encountered during publishing
+    }
 
 
 ## ############################################################################################## ##
