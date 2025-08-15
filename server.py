@@ -334,6 +334,9 @@ def subscribe_once(topic: str = "", msg_type: str = "", timeout: Optional[float]
                     
                     # Check for the first published message
                     if msg_data.get("op") == "publish" and msg_data.get("topic") == topic:
+                        # Unsubscribe before returning the message
+                        unsubscribe_msg = {"op": "unsubscribe", "topic": topic}
+                        ws_manager.send(unsubscribe_msg)
                         return {"msg": msg_data.get("msg", {})}
                         
                 except json.JSONDecodeError:
