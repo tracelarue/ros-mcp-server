@@ -280,7 +280,8 @@ def get_subscribers_for_topic(topic: str) -> dict:
     description=(
         "Subscribe to a ROS topic and return the first message received.\n"
         "Example:\n"
-        "subscribe_once(topic='/cmd_vel', msg_type='geometry_msgs/msg/TwistStamped', timeout=10.0)"
+        "subscribe_once(topic='/cmd_vel', msg_type='geometry_msgs/msg/TwistStamped')\n"
+        "subscribe_once(topic='/slow_topic', msg_type='my_package/SlowMsg', timeout=10.0)  # Specify timeout only if topic publishes infrequently"
     )
 )
 def subscribe_once(topic: str = "", msg_type: str = "", timeout: Optional[float] = None) -> dict:
@@ -895,10 +896,11 @@ def inspect_all_services() -> dict:
     description=(
         "Call a ROS service with specified request data.\n"
         "Example:\n"
-        "call_service('/rosapi/topics', 'rosapi/Topics', {})"
+        "call_service('/rosapi/topics', 'rosapi/Topics', {})\n"
+        "call_service('/slow_service', 'my_package/SlowService', {}, timeout=10.0)  # Specify timeout only for slow services"
     )
 )
-def call_service(service_name: str, service_type: str, request: dict) -> dict:
+def call_service(service_name: str, service_type: str, request: dict, timeout: Optional[float] = None) -> dict:
     """
     Call a ROS service with specified request data.
 
@@ -906,6 +908,7 @@ def call_service(service_name: str, service_type: str, request: dict) -> dict:
         service_name (str): The service name (e.g., '/rosapi/topics')
         service_type (str): The service type (e.g., 'rosapi/Topics')
         request (dict): Service request data as a dictionary
+        timeout (Optional[float]): Timeout in seconds. If None, uses the default timeout.
 
     Returns:
         dict: Contains the service response or error information.
@@ -921,7 +924,7 @@ def call_service(service_name: str, service_type: str, request: dict) -> dict:
 
     # Call the service through rosbridge
     with ws_manager:
-        response = ws_manager.request(message)
+        response = ws_manager.request(message, timeout=timeout)
 
     # Check for service response errors first
     if response and "result" in response and not response["result"]:
