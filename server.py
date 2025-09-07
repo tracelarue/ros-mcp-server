@@ -7,6 +7,7 @@ from fastmcp import FastMCP
 
 from utils.websocket_manager import WebSocketManager, parse_json, parse_image
 from utils.network_utils import ping_ip_and_port
+from utils.config_utils import load_robot_config
 
 from fastmcp.utilities.types import Image
 from PIL import Image as PILImage
@@ -24,10 +25,21 @@ ws_manager = WebSocketManager(
 )  # Increased default timeout for ROS operations
 
 
-@mcp.tool(description=("Connect to a robot by setting IP/port and testing connectivity."))
+@mcp.tool(description=("Get robot configuration from YAML file."))
+def get_robot_config() -> dict:
+    """
+    Get the robot configuration from the YAML file for connecting to the robot and knowing its capabilities.
+
+    Returns:
+        dict: The robot configuration.
+    """
+    return {"robot config": load_robot_config()}
+
+
+@mcp.tool(description=("First get robot config and then Connect to a robot by setting IP/port and testing connectivity."))
 def connect_to_robot(
     ip: Optional[str] = None,
-    port: Optional[int] = None,
+    # port: Optional[int] = None,
     ping_timeout: float = 2.0,
     port_timeout: float = 2.0,
 ) -> dict:
@@ -45,7 +57,8 @@ def connect_to_robot(
     """
     # Set default values if None
     actual_ip = ip if ip is not None else "127.0.0.1"
-    actual_port = port if port is not None else 9090
+    # actual_port = port if port is not None else 9090
+    actual_port = 9090  # Port is fixed for rosbridge
 
     # Set the IP and port
     ws_manager.set_ip(actual_ip, actual_port)
@@ -308,10 +321,11 @@ def get_subscribers_for_topic(topic: str) -> dict:
 @mcp.tool(
     description=(
         "Subscribe to a ROS topic and return the first message received.\n"
-        "Example:\n"
-        "subscribe_once(topic='/cmd_vel', msg_type='geometry_msgs/msg/TwistStamped')\n"
-        "subscribe_once(topic='/slow_topic', msg_type='my_package/SlowMsg', timeout=10.0)  # Specify timeout only if topic publishes infrequently\n"
-        "subscribe_once(topic='/high_rate_topic', msg_type='sensor_msgs/Image', queue_length=5, throttle_rate_ms=100)  # Control message buffering and rate"
+        "timeout is always None! timeout=None"
+        # "Example:\n"
+        # "subscribe_once(topic='/cmd_vel', msg_type='geometry_msgs/msg/TwistStamped')\n"
+        # "subscribe_once(topic='/slow_topic', msg_type='my_package/SlowMsg', timeout=None)  # Specify timeout only if topic publishes infrequently\n"
+        # "subscribe_once(topic='/high_rate_topic', msg_type='sensor_msgs/Image', , timeout=None, queue_length=5, throttle_rate_ms=100)  # Control message buffering and rate"
     )
 )
 def subscribe_once(
@@ -1097,7 +1111,10 @@ def ping_robot(ip: str, port: int, ping_timeout: float = 2.0, port_timeout: floa
 ##                      IMAGE ANALYSIS
 ##
 ## ############################################################################################## ##
-@mcp.tool()
+@mcp.tool(
+    description=("First, subscribe to an Image topic using 'subscribe_once' to save an image.\n"
+                 "Then, use this tool to analyze the saved image\n")
+)
 def analyze_previously_received_image():
     """
     Analyze the received image.
