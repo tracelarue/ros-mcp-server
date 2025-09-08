@@ -7,7 +7,7 @@ from fastmcp import FastMCP
 
 from utils.websocket_manager import WebSocketManager, parse_json, parse_image
 from utils.network_utils import ping_ip_and_port
-from utils.config_utils import load_robot_config
+from utils.config_utils import parse_robot_config
 
 from fastmcp.utilities.types import Image
 from PIL import Image as PILImage
@@ -26,15 +26,20 @@ ws_manager = WebSocketManager(
 
 
 @mcp.tool(description=("Get robot configuration from YAML file."))
-def get_robot_config() -> dict:
+def get_robot_config(name: str) -> dict:
     """
     Get the robot configuration from the YAML file for connecting to the robot and knowing its capabilities.
 
     Returns:
         dict: The robot configuration.
     """
-    return {"robot config": load_robot_config()}
-
+    robot_config = parse_robot_config(name)
+    
+    if len(robot_config) > 1:
+        return {"error": f"Multiple configurations found for robot '{name}'. Please specify a more precise name."}
+    elif not robot_config:
+        return {"error": f"No configuration found for robot '{name}'. Please check the name and try again. Or you can set the IP/port manually using the 'connect_to_robot' tool."}
+    return {"robot_config": robot_config}
 
 
 @mcp.tool(description=("After getting the robot config, connect to the robot by setting the IP/port and testing connectivity."))
@@ -58,8 +63,7 @@ def connect_to_robot(
     """
     # Set default values if None
     actual_ip = ip if ip is not None else "127.0.0.1"
-    # actual_port = port if port is not None else 9090
-    actual_port = 9090  # Port is fixed for rosbridge
+    actual_port = int(port) if port is not None else 9090
 
     # Set the IP and port
     ws_manager.set_ip(actual_ip, actual_port)
