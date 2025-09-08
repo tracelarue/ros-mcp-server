@@ -1,7 +1,7 @@
 import json
 import time
 import os
-from typing import Optional
+from typing import Optional, Union
 
 from fastmcp import FastMCP
 
@@ -36,10 +36,11 @@ def get_robot_config() -> dict:
     return {"robot config": load_robot_config()}
 
 
-@mcp.tool(description=("First get robot config and then Connect to a robot by setting IP/port and testing connectivity."))
+
+@mcp.tool(description=("After getting the robot config, connect to the robot by setting the IP/port and testing connectivity."))
 def connect_to_robot(
     ip: Optional[str] = None,
-    # port: Optional[int] = None,
+    port: Optional[Union[int, str]] = None,
     ping_timeout: float = 2.0,
     port_timeout: float = 2.0,
 ) -> dict:
@@ -321,11 +322,10 @@ def get_subscribers_for_topic(topic: str) -> dict:
 @mcp.tool(
     description=(
         "Subscribe to a ROS topic and return the first message received.\n"
-        "timeout is always None! timeout=None"
-        # "Example:\n"
-        # "subscribe_once(topic='/cmd_vel', msg_type='geometry_msgs/msg/TwistStamped')\n"
-        # "subscribe_once(topic='/slow_topic', msg_type='my_package/SlowMsg', timeout=None)  # Specify timeout only if topic publishes infrequently\n"
-        # "subscribe_once(topic='/high_rate_topic', msg_type='sensor_msgs/Image', , timeout=None, queue_length=5, throttle_rate_ms=100)  # Control message buffering and rate"
+        "Example:\n"
+        "subscribe_once(topic='/cmd_vel', msg_type='geometry_msgs/msg/TwistStamped')\n"
+        "subscribe_once(topic='/slow_topic', msg_type='my_package/SlowMsg', timeout=None)  # Specify timeout only if topic publishes infrequently\n"
+        "subscribe_once(topic='/high_rate_topic', msg_type='sensor_msgs/Image', timeout=None, queue_length=5, throttle_rate_ms=100)  # Control message buffering and rate"
     )
 )
 def subscribe_once(
