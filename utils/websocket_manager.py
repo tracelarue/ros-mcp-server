@@ -77,7 +77,7 @@ def parse_image(raw: Optional[Union[str, bytes]]) -> Optional[dict]:
     except ValueError as e:
         print(f"[Image] Reshape error: {e}")
         return None
-    
+
     if not os.path.exists("./camera"):
         os.makedirs("./camera")
 
@@ -86,6 +86,7 @@ def parse_image(raw: Optional[Union[str, bytes]]) -> Optional[dict]:
         return result if isinstance(result, dict) else None
     else:
         return None
+
 
 class WebSocketManager:
     def __init__(self, ip: str, port: int, default_timeout: float = 2.0):
