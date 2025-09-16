@@ -1,5 +1,6 @@
-import yaml
 from pathlib import Path
+
+import yaml
 
 
 def load_robot_config(robot_name: str, specs_dir: str) -> dict:
