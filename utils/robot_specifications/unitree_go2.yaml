@@ -1,29 +1,7 @@
-# Robot configurations
-# Each robot entry includes:
-# - name: A unique identifier for the robot, if name includes spaces, use quotes (e.g., 'My_Robot')
-# - ip: The IP address of the robot
-# - type: 'real' for physical robots, 'sim' for virtual robots
-# - prompts: Instructions and information specific to the robot, including control commands and sensor details
-
-robots:
-  - name: YOUR_ROBOT_NAME
-    alias: YOUR_ROBOT_ALIAS # Optional alias for easier reference
-    ip: YOUR_ROBOT_IP
-    type: real # or 'sim' for simulation
-    prompts: |
-              Replace this text with specific instructions and information about your robot.
-              Include details on how to control it, important topics, and any special commands.
-              For example:
-              - Control commands (e.g., movement, actions)
-              - Sensor topics (e.g., camera, lidar)
-              - Safety guidelines
-              - Any custom messages or services used by the robot
-              
-  - name: unitree_go2
-    alias: go2
-    ip: 192.168.123.18 # Default IP address for Unitree Go2
-    type: real
-    prompts: |
+name: unitree_go2
+alias: go2
+type: real
+prompts: |
               The Unitree Go2 is a quadruped robot equipped with advanced sensors and mobility, designed for agile movement and versatile research or industrial applications.
               The Unitree Go2 robot uses many custom messages. Therefore, you don't need to use functions to check the topics.
 
@@ -103,5 +81,3 @@ robots:
               *  /utlidar/cloud: Lidar point cloud data
               *  /camera/rgb/image_raw: RGB camera images
               Using these sensors, the robot can measure the distance to objects and perceive its environment.
-
-    
