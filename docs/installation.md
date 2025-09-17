@@ -1,4 +1,7 @@
 # Installation Guide
+
+> ⚠️ **Prerequisite**: You need either ROS installed locally on your machine OR access over the network to a robot/computer with ROS installed. This MCP server connects to ROS systems on a robot, so a running ROS environment is required.
+
 Installation includes the following steps:
 - Install the MCP server
   - Clone this repository
@@ -66,7 +69,7 @@ Any LLM client that supports MCP can be used. We use **Claude Desktop** for test
 ```
 
 - Add the following to the `"mcpServers"` section of the JSON file
-- Make sure to replace `<ABSOLUTE_PATH>` with the path to your `ros-mcp-server` folder:
+- Make sure to replace `<ABSOLUTE_PATH>` with the **full absolute path** to your `ros-mcp-server` folder (note: `~` for home directory may not work in JSON files):
 
 ```json
 {
@@ -92,6 +95,18 @@ Any LLM client that supports MCP can be used. We use **Claude Desktop** for test
   <img src="https://github.com/robotmcp/ros-mcp-server/blob/main/docs/images/connected_mcp.png" width="500"/>
 </p>
 
+## 2.4. Troubleshooting
+- If the `ros-mcp-server` doesn't appear even after correctly configuring `claude_desktop_config.json`, try completely shutting down Claude Desktop using the commands below and then restarting it. This could be a Claude Desktop caching issue.
+```bash
+# Completely terminate Claude Desktop processes
+pkill -f claude-desktop
+# Or alternatively
+killall claude-desktop
+
+# Restart Claude Desktop
+claude-desktop
+```
+
 </details>
 
 <details>
@@ -108,7 +123,7 @@ Any LLM client that supports MCP can be used. We use **Claude Desktop** for test
 ```
 
 - Add the following to the `"mcpServers"` section of the JSON file
-- Make sure to replace `<ABSOLUTE_PATH>` with the path to your `ros-mcp-server` folder:
+- Make sure to replace `<ABSOLUTE_PATH>` with the **full absolute path** to your `ros-mcp-server` folder (note: `~` for home directory may not work in JSON files):
 
 ```json
 {
@@ -153,7 +168,7 @@ This will have Claude running on Windows and the MCP server running on WSL. We a
 ```
 
 - Add the following to the `"mcpServers"` section of the JSON file
-- Make sure to replace `<ABSOLUTE_PATH>` with the path to your `ros-mcp-server` folder:
+- Make sure to replace `<ABSOLUTE_PATH>` with the **full absolute path** to your `ros-mcp-server` folder (note: `~` for home directory may not work in JSON files):
 - Set the **full WSL path** to your `uv` installation (e.g., `/home/youruser/.local/bin/uv`)
 - Use the correct **WSL distribution name** (e.g., `"Ubuntu-22.04"`)
 
@@ -190,7 +205,7 @@ This will have Claude running on Windows and the MCP server running on WSL. We a
 <details>
 <summary><strong>ROS 1</strong></summary>
 
-## 4.1. Install `rosbridge_server`
+## 3.1. Install `rosbridge_server`
 
 This package is required for MCP to interface with ROS or ROS 2 via WebSocket. It needs to be installed on the same machine that is running ROS.
 
@@ -227,7 +242,7 @@ roslaunch rosbridge_server rosbridge_websocket.launch
 <summary><strong>ROS 2</strong></summary>
 
 
-## 4.1. Install `rosbridge_server`
+## 3.1. Install `rosbridge_server`
 
 This package is required for MCP to interface with ROS or ROS 2 via WebSocket. It needs to be installed on the same machine that is running ROS.
 
@@ -262,11 +277,21 @@ ros2 launch rosbridge_server rosbridge_websocket_launch.xml
 # 4. You're ready to go!
 You can test out your server with any robot that you have running. Just tell your AI to connect to the robot on its target IP. (Default is localhost, so you don't need to tell it to connect if the MCP server is installed on the same machine as your ROS)
 
-✅ **Tip:** If you don't currently have any robots running, turtlesim is the easiest ROS robot to experiment. It does not have any simulation depenencies such as Gazebo or IsaacSim. You can launch turtlesim in ROS with the below command
+✅ **Tip:** If you don't currently have any robots running, turtlesim is considered the hello-ROS robot to experiment with. It does not have any simulation depenencies such as Gazebo or IsaacSim. 
+
+For a complete step-by-step tutorial on using turtlesim with the MCP server and for more information on ROS and turtlesim, see our [Turtlesim Tutorial](../examples/1_turtlesim/README.md).
+
+If you have ROS already installed, you can launch turtlesim with the below command:
+**ROS1:**
 ```
 rosrun turtlesim turtlesim_node
-
 ```
+
+**ROS2:**
+```
+ros2 run turtlesim turtlesim_node
+```
+
 
 <details>
 <summary><strong>Example Commands</strong></summary>
