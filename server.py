@@ -30,7 +30,7 @@ MCP_PORT = int(
 )  # Default is 9000. Replace with the port of your remote MCP server.
 
 # Initialize MCP server and WebSocket manager
-mcp = FastMCP("ros-mcp-server")   
+mcp = FastMCP("ros-mcp-server")
 ws_manager = WebSocketManager(
     ROSBRIDGE_IP, ROSBRIDGE_PORT, default_timeout=5.0
 )  # Increased default timeout for ROS operations
