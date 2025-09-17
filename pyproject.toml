@@ -1,5 +1,5 @@
 [project]
-name = "ros-mcp-server"
+name = "ros-mcp"
 version = "2.1.1"
 description = "MCP tool server for ROS using rosbridge WebSocket"
 readme = "README.md"
@@ -10,8 +10,12 @@ authors = [
     { name = "Jungsoo Lee"}
 ]
 
+# MCP Registry validation - required for PyPI package verification
+mcp-name = "io.github.robotmcp/ros-mcp-server"
+
 dependencies = [
     "fastmcp>=2.11.3",
+    "jsonschema>=4.25.1",
     "mcp[cli]>=1.13.0",
     "opencv-python>=4.11.0.86",
     "pillow>=11.3.0",
