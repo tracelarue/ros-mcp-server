@@ -1,13 +1,15 @@
-import yaml
 from pathlib import Path
 
+import yaml
 
-def load_robot_config(file_path: str = 'utils/robot_config.yaml') -> dict:
+
+def load_robot_config(robot_name: str, specs_dir: str) -> dict:
     """
-    Load the robot configuration from a YAML file.
+    Load the robot configuration from a YAML file by robot name.
 
     Args:
-        file_path (str): Path to the YAML configuration file.
+        robot_name (str): The name of the robot.
+        specs_dir (str): Directory containing robot specification files.
 
     Returns:
         dict: The robot configuration.
@@ -15,44 +17,73 @@ def load_robot_config(file_path: str = 'utils/robot_config.yaml') -> dict:
     Raises:
         FileNotFoundError: If the YAML file does not exist.
     """
-    path = Path(file_path)
-    if not path.exists():
-        raise FileNotFoundError(f"Config file not found: {file_path}")
+    file_path = Path(specs_dir) / f"{robot_name}.yaml"
 
-    with path.open('r') as file:
+    if not file_path.exists():
+        raise FileNotFoundError(f"Robot config file not found: {file_path}")
+
+    with file_path.open("r") as file:
         return yaml.safe_load(file) or {}
 
 
-def parse_robot_config(name: str, file_path: str = 'utils/robot_config.yaml') -> dict:
+def parse_robot_config(name: str, specs_dir: str = "utils/robot_specifications") -> dict:
     """
     Parse the robot configuration to a more accessible format.
 
     Args:
-        name (str): The name or alias of the robot.
-        file_path (str): Path to the YAML configuration file.
+        name (str): The name of the robot.
+        specs_dir (str): Directory containing robot specification files.
 
     Returns:
-        dict: Parsed robot configuration with keys as robot name or alias.
+        dict: Parsed robot configuration with robot name as key.
     """
-    config = load_robot_config(file_path)
-    parsed_config = {}
 
     name = name.replace(" ", "_")
+    config = load_robot_config(name, specs_dir)
+    parsed_config = {}
 
-    # Search for the robot by name or alias
-    for robot in config.get('robots', []):
-        for key in ('name', 'alias'):
-            candidate = robot.get(key, '').replace(" ", "_")
-            if candidate == name:
-                # check required fields
-                for field in ('ip', 'type', 'prompts'):
-                    if field not in robot or robot[field] in (None, ''):
-                        raise ValueError(f"Robot '{name}' is missing required field: {field}")
+    # Check if the loaded config has the required fields
+    if not config:
+        raise ValueError(f"No configuration found for robot '{name}'")
 
-                parsed_config[candidate] = {
-                    'ip': robot['ip'],
-                    'type': robot['type'],
-                    'prompts': robot['prompts']
-                }
+    # Check required fields
+    for field in ("type", "prompts"):
+        if field not in config or config[field] in (None, ""):
+            raise ValueError(f"Robot '{name}' is missing required field: {field}")
+
+    # Create configuration with robot name as key
+    parsed_config[name] = {"type": config["type"], "prompts": config["prompts"]}
 
     return parsed_config
+
+
+def get_robot_specifications(specs_dir: str = "utils/robot_specifications") -> dict:
+    """
+    Get a list of all available robot specification files.
+
+    Args:
+        specs_dir (str): Directory containing robot specification files.
+
+    Returns:
+        dict: List of available robot names that can be used with parse_robot_config.
+    """
+    specs_path = Path(specs_dir)
+
+    if not specs_path.exists():
+        return {"error": f"Robot specifications directory not found: {specs_path}"}
+
+    try:
+        # Find all YAML files in the specifications directory
+        yaml_files = list(specs_path.glob("*.yaml"))
+
+        if not yaml_files:
+            return {"error": "No robot specification files found"}
+
+        # Extract robot names (file names without .yaml extension)
+        robot_names = [file.stem for file in yaml_files]
+        robot_names.sort()  # Sort alphabetically for consistency
+
+        return {"robot_specifications": robot_names, "count": len(robot_names)}
+
+    except Exception as e:
+        return {"error": f"Failed to read robot specifications directory: {str(e)}"}

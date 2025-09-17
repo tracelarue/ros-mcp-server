@@ -1,16 +1,15 @@
 import json
-import time
 import os
+import time
 from typing import Optional, Union
 
 from fastmcp import FastMCP
-
-from utils.websocket_manager import WebSocketManager, parse_json, parse_image
-from utils.network_utils import ping_ip_and_port
-from utils.config_utils import parse_robot_config
-
 from fastmcp.utilities.types import Image
 from PIL import Image as PILImage
+
+from utils.config_utils import get_robot_specifications, parse_robot_config
+from utils.network_utils import ping_ip_and_port
+from utils.websocket_manager import WebSocketManager, parse_image, parse_json
 
 # ROS bridge connection settings
 ROSBRIDGE_IP = "127.0.0.1"  # Default is localhost. Replace with your local IPor set using the LLM.
@@ -40,6 +39,17 @@ def get_robot_config(name: str) -> dict:
     elif not robot_config:
         return {"error": f"No configuration found for robot '{name}'. Please check the name and try again. Or you can set the IP/port manually using the 'connect_to_robot' tool."}
     return {"robot_config": robot_config}
+
+
+@mcp.tool(description=("List all available robot specifications that can be used with get_robot_config."))
+def list_verified_robot_specifications() -> dict:
+    """
+    Get a list of all available robot specification files.
+
+    Returns:
+        dict: List of available robot names that can be used with get_robot_config.
+    """
+    return get_robot_specifications()
 
 
 @mcp.tool(description=("After getting the robot config, connect to the robot by setting the IP/port and testing connectivity."))
