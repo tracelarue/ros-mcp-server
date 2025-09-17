@@ -1155,7 +1155,7 @@ def ping_robot(ip: str, port: int, ping_timeout: float = 2.0, port_timeout: floa
 @mcp.tool(
     description=(
         "First, subscribe to an Image topic using 'subscribe_once' to save an image.\n"
-        "Then, use this tool to analyze the saved image.\n"
+        "Then, use this tool to analyze the saved image\n"
     )
 )
 def analyze_previously_received_image():
