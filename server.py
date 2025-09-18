@@ -1215,5 +1215,6 @@ def main():
             "Use 'stdio', 'http', or 'streamable-http'."
         )
 
+
 if __name__ == "__main__":
     main()
