@@ -1194,6 +1194,7 @@ def _encode_image_to_imagecontent(image):
 
 def main():
     """Main entry point for the MCP server console script."""
+
     if MCP_TRANSPORT == "stdio":
         # stdio doesn't need host/port
         mcp.run(transport="stdio")
@@ -1213,7 +1214,6 @@ def main():
             f"Unsupported MCP_TRANSPORT={MCP_TRANSPORT!r}. "
             "Use 'stdio', 'http', or 'streamable-http'."
         )
-
 
 if __name__ == "__main__":
     main()
