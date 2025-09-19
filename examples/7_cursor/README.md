@@ -258,27 +258,6 @@ python server.py --transport streamable-http --host 127.0.0.1 --port 9000
 python server.py --transport http --host 0.0.0.0 --port 8080
 ```
 
-### Custom Robot Specifications
-
-Add your own robot configurations in `utils/robot_specifications/`:
-
-```yaml
-# utils/robot_specifications/my_robot.yaml
-name: "My Custom Robot"
-ip: "192.168.1.100"
-port: 9090
-description: "My custom robot configuration"
-```
-
-### Multiple Robot Support
-
-You can connect to different robots by using the `connect_to_robot` tool in the MCP server:
-
-```bash
-# Connect to different robots using the MCP tools
-# Robot 1: Use the connect_to_robot tool with IP 192.168.1.100
-# Robot 2: Use the connect_to_robot tool with IP 192.168.1.101
-```
 
 ## 5. FAQ
 
