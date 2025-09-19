@@ -84,8 +84,7 @@ cd ros-mcp-server
 ```bash
 wsl
 cd ros-mcp-server
-export MCP_TRANSPORT="http"
-uv run server.py
+uv run server.py --transport http --host 127.0.0.1 --port 9000
 ```
 
 * Configure Cursor with the following:
@@ -242,20 +241,21 @@ Once connected, you can use natural language to interact with your ROS system:
 
 ## 4. Advanced Configuration
 
-### Environment Variables
+### Command-line Arguments
 
-You can customize the MCP server behavior with these environment variables:
+You can customize the MCP server behavior with command-line arguments:
 
 ```bash
-# ROS Bridge settings
-export ROSBRIDGE_IP="127.0.0.1"  # Default: localhost
-export ROSBRIDGE_PORT="9090"     # Default: 9090
+# Show all available options
+python server.py --help
 
-# MCP Transport settings
-export MCP_TRANSPORT="streamable-http"  # For ChatGPT: streamable-http
-export MCP_TRANSPORT="stdio"            # For Cursor: stdio (recommended)
-export MCP_HOST="127.0.0.1"             # For HTTP transport
-export MCP_PORT="9000"                  # For HTTP transport
+# Different transport options
+python server.py --transport stdio                    # Default: stdio (recommended for Cursor)
+python server.py --transport http --host 0.0.0.0 --port 9000
+python server.py --transport streamable-http --host 127.0.0.1 --port 9000
+
+# Custom host and port
+python server.py --transport http --host 0.0.0.0 --port 8080
 ```
 
 ### Custom Robot Specifications
@@ -272,12 +272,12 @@ description: "My custom robot configuration"
 
 ### Multiple Robot Support
 
-You can connect to multiple robots by switching configurations:
+You can connect to different robots by using the `connect_to_robot` tool in the MCP server:
 
 ```bash
-# Connect to different robots
-export ROSBRIDGE_IP="192.168.1.100"  # Robot 1
-export ROSBRIDGE_IP="192.168.1.101"  # Robot 2
+# Connect to different robots using the MCP tools
+# Robot 1: Use the connect_to_robot tool with IP 192.168.1.100
+# Robot 2: Use the connect_to_robot tool with IP 192.168.1.101
 ```
 
 ## 5. FAQ
