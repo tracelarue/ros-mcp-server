@@ -4,7 +4,7 @@
 
 ### Prepare host machine (MCP Server)
 
-* Installation of ChatGPT Desktop. \[chatgpt.com/download] or Microsoft Store.
+* Installation of ChatGPT Desktop. Download [here](chatgpt.com/download) or Microsoft Store.
 * Installation of WSL (Linux).
 
 ### Prepare target robot (ROS)
@@ -39,11 +39,11 @@
 	```bash
 	curl -LsSf https://astral.sh/uv/install.sh | sh
 	```
-	or
+	or (not recommended)
 	```bash
 	pip install uv
 	```
-	or
+	or (not recommended)
 	```bash
 	sudo snap install --classic astral-uv
 	```
@@ -123,8 +123,6 @@ cd ros-mcp-server
 
 
 ## 1.2 Run ROS-MCP Server
-
-
 
 * Run the ROS-MCP using one of the following:
 		
@@ -228,8 +226,8 @@ cd ros-mcp-server
 
 	- Name: *ROS-MCP Server*
 	- Description: *An MCP Server to connect with ROS/ROS2*
-	- MCP Server URL: `https://abc123-xyz789.ngrok-free.app/mcp` (don't forget to replace with your domain and add the `\mcp`)
-	- Authention: *No authentication*
+	- MCP Server URL: `https://abc123-xyz789.ngrok-free.app/mcp` (don't forget to replace with your domain and add the `/mcp`)
+	- Authentication: *No authentication*
 	- I trust this application
 
 * In ChatGPT, start a new Chat, navigate to `+` > `Developer Mode` > `Add sources` > Activate `ROS-MCP Server`
