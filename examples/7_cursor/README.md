@@ -258,7 +258,6 @@ python server.py --transport streamable-http --host 127.0.0.1 --port 9000
 python server.py --transport http --host 0.0.0.0 --port 8080
 ```
 
-
 ## 5. FAQ
 
 **Q: Can I run multiple MCP servers?**
@@ -294,6 +293,3 @@ We welcome contributions! Please see our [Contributing Guide](../../docs/contrib
 - Code style guidelines
 - Submitting pull requests
 - Testing procedures
-
-### License
-This project is licensed under the MIT License - see the [LICENSE](../../LICENSE) file for details.
