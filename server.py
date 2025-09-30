@@ -79,8 +79,8 @@ def list_verified_robot_specifications() -> dict:
     )
 )
 def connect_to_robot(
-    ip: Optional[str] = None,
-    port: Optional[Union[int, str]] = None,
+    ip: str = ROSBRIDGE_IP,
+    port: Union[int, str] = ROSBRIDGE_PORT,
     ping_timeout: float = 2.0,
     port_timeout: float = 2.0,
 ) -> dict:
@@ -88,8 +88,8 @@ def connect_to_robot(
     Connect to a robot by setting the IP and port for the WebSocket connection, then testing connectivity.
 
     Args:
-        ip (Optional[str]): The IP address of the rosbridge server. Defaults to "127.0.0.1" (localhost).
-        port (Optional[int]): The port number of the rosbridge server. Defaults to 9090.
+        ip (str): The IP address of the rosbridge server. Defaults to "127.0.0.1" (localhost).
+        port (int): The port number of the rosbridge server. Defaults to 9090.
         ping_timeout (float): Timeout for ping in seconds. Default = 2.0.
         port_timeout (float): Timeout for port check in seconds. Default = 2.0.
 
@@ -97,8 +97,8 @@ def connect_to_robot(
         dict: Connection status with ping and port check results.
     """
     # Set default values if None
-    actual_ip = ip if ip is not None else "127.0.0.1"
-    actual_port = int(port) if port is not None else 9090
+    actual_ip = str(ip).strip() if ip else ROSBRIDGE_IP
+    actual_port = int(port) if port else ROSBRIDGE_PORT
 
     # Set the IP and port
     ws_manager.set_ip(actual_ip, actual_port)
