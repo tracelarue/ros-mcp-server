@@ -496,7 +496,7 @@ def inspect_all_topics() -> dict:
 def subscribe_once(
     topic: str = "",
     msg_type: str = "",
-    timeout: Optional[float] = None,
+    timeout: float = None,
     queue_length: Optional[int] = None,
     throttle_rate_ms: Optional[int] = None,
 ) -> dict:
@@ -2112,7 +2112,12 @@ def get_action_details(action_type: str) -> dict:
     if not action_type or not action_type.strip():
         return {"error": "Action type cannot be empty"}
 
-    result = {"action_type": action_type, "goal": {}, "result": {}, "feedback": {}}
+    result = {
+        "action_type": action_type, 
+        "goal": {}, 
+        "result": {}, 
+        "feedback": {}
+    }
 
     # Get goal, result, and feedback details in a single WebSocket context
     with ws_manager:
@@ -2126,16 +2131,35 @@ def get_action_details(action_type: str) -> dict:
         }
 
         goal_response = ws_manager.request(goal_message)
-        if goal_response and "values" in goal_response:
+        if goal_response and isinstance(goal_response, dict) and "values" in goal_response and "error" not in goal_response:
             typedefs = goal_response["values"].get("typedefs", [])
             if typedefs:
                 for typedef in typedefs:
                     field_names = typedef.get("fieldnames", [])
                     field_types = typedef.get("fieldtypes", [])
+                    field_array_len = typedef.get("fieldarraylen", [])
+                    examples = typedef.get("examples", [])
+                    const_names = typedef.get("constnames", [])
+                    const_values = typedef.get("constvalues", [])
+                    
                     fields = {}
-                    for name, ftype in zip(field_names, field_types):
+                    field_details = {}
+                    for i, (name, ftype) in enumerate(zip(field_names, field_types)):
                         fields[name] = ftype
-                    result["goal"] = {"fields": fields, "field_count": len(fields)}
+                        field_details[name] = {
+                            "type": ftype,
+                            "array_length": field_array_len[i] if i < len(field_array_len) else -1,
+                            "example": examples[i] if i < len(examples) else None
+                        }
+                    
+                    result["goal"] = {
+                        "fields": fields, 
+                        "field_count": len(fields),
+                        "field_details": field_details,
+                        "message_type": typedef.get("type", ""),
+                        "examples": examples,
+                        "constants": dict(zip(const_names, const_values)) if const_names else {}
+                    }
 
         # Get result details using action-specific service
         result_message = {
@@ -2147,16 +2171,35 @@ def get_action_details(action_type: str) -> dict:
         }
 
         result_response = ws_manager.request(result_message)
-        if result_response and "values" in result_response:
+        if result_response and isinstance(result_response, dict) and "values" in result_response and "error" not in result_response:
             typedefs = result_response["values"].get("typedefs", [])
             if typedefs:
                 for typedef in typedefs:
                     field_names = typedef.get("fieldnames", [])
                     field_types = typedef.get("fieldtypes", [])
+                    field_array_len = typedef.get("fieldarraylen", [])
+                    examples = typedef.get("examples", [])
+                    const_names = typedef.get("constnames", [])
+                    const_values = typedef.get("constvalues", [])
+                    
                     fields = {}
-                    for name, ftype in zip(field_names, field_types):
+                    field_details = {}
+                    for i, (name, ftype) in enumerate(zip(field_names, field_types)):
                         fields[name] = ftype
-                    result["result"] = {"fields": fields, "field_count": len(fields)}
+                        field_details[name] = {
+                            "type": ftype,
+                            "array_length": field_array_len[i] if i < len(field_array_len) else -1,
+                            "example": examples[i] if i < len(examples) else None
+                        }
+                    
+                    result["result"] = {
+                        "fields": fields, 
+                        "field_count": len(fields),
+                        "field_details": field_details,
+                        "message_type": typedef.get("type", ""),
+                        "examples": examples,
+                        "constants": dict(zip(const_names, const_values)) if const_names else {}
+                    }
 
         # Get feedback details using action-specific service
         feedback_message = {
@@ -2168,22 +2211,154 @@ def get_action_details(action_type: str) -> dict:
         }
 
         feedback_response = ws_manager.request(feedback_message)
-        if feedback_response and "values" in feedback_response:
+        if feedback_response and isinstance(feedback_response, dict) and "values" in feedback_response and "error" not in feedback_response:
             typedefs = feedback_response["values"].get("typedefs", [])
             if typedefs:
                 for typedef in typedefs:
                     field_names = typedef.get("fieldnames", [])
                     field_types = typedef.get("fieldtypes", [])
+                    field_array_len = typedef.get("fieldarraylen", [])
+                    examples = typedef.get("examples", [])
+                    const_names = typedef.get("constnames", [])
+                    const_values = typedef.get("constvalues", [])
+                    
                     fields = {}
-                    for name, ftype in zip(field_names, field_types):
+                    field_details = {}
+                    for i, (name, ftype) in enumerate(zip(field_names, field_types)):
                         fields[name] = ftype
-                    result["feedback"] = {"fields": fields, "field_count": len(fields)}
+                        field_details[name] = {
+                            "type": ftype,
+                            "array_length": field_array_len[i] if i < len(field_array_len) else -1,
+                            "example": examples[i] if i < len(examples) else None
+                        }
+                    
+                    result["feedback"] = {
+                        "fields": fields, 
+                        "field_count": len(fields),
+                        "field_details": field_details,
+                        "message_type": typedef.get("type", ""),
+                        "examples": examples,
+                        "constants": dict(zip(const_names, const_values)) if const_names else {}
+                    }
 
     # Check if we got any data
     if not result["goal"] and not result["result"] and not result["feedback"]:
         return {"error": f"Action type {action_type} not found or has no definition"}
 
     return result
+
+
+@mcp.tool(
+    description=(
+        "Get action status for a specific action type. Works only with ROS 2.\n"
+        "Example:\n"
+        "get_action_status('action_tutorials_interfaces/action/Fibonacci')"
+    )
+)
+def get_action_status(action_type: str) -> dict:
+    """
+    Get action status for a specific action type. Works only with ROS 2.
+
+    Args:
+        action_type (str): The action type (e.g., 'action_tutorials_interfaces/action/Fibonacci')
+
+    Returns:
+        dict: Contains action status information including active goals and their status.
+    """
+    # Validate input
+    if not action_type or not action_type.strip():
+        return {"error": "Action type cannot be empty"}
+
+    # Extract action name from action type
+    # For example: 'action_tutorials_interfaces/action/Fibonacci' -> '/fibonacci'
+    action_name = f"/{action_type.split('/')[-1].lower()}"
+    
+    # Try to get action status by subscribing to the status topic
+    status_topic = f"{action_name}/_action/status"
+    status_msg_type = "action_msgs/msg/GoalStatusArray"
+    
+    try:
+        # Subscribe to action status topic
+        with ws_manager:
+            message = {
+                "op": "subscribe",
+                "topic": status_topic,
+                "type": status_msg_type,
+                "id": f"get_action_status_{action_name.replace('/', '_')}",
+            }
+            
+            send_error = ws_manager.send(message)
+            if send_error:
+                return {
+                    "action_type": action_type,
+                    "action_name": action_name,
+                    "success": False,
+                    "error": f"Failed to subscribe to status topic: {send_error}",
+                }
+            
+            # Wait for status message
+            response = ws_manager.receive(timeout=3.0)
+            if not response:
+                return {
+                    "action_type": action_type,
+                    "action_name": action_name,
+                    "success": False,
+                    "error": "No response from action status topic",
+                }
+            
+            response_data = json.loads(response)
+            
+            if response_data.get("op") == "status" and response_data.get("level") == "error":
+                return {"error": f"Action status error: {response_data.get('msg', 'Unknown error')}"}
+            
+            if "msg" not in response_data or "status_list" not in response_data["msg"]:
+                return {
+                    "action_type": action_type,
+                    "action_name": action_name,
+                    "success": True,
+                    "active_goals": [],
+                    "goal_count": 0,
+                    "note": f"No active goals found for action {action_name}"
+                }
+            
+            status_list = response_data["msg"]["status_list"]
+            status_map = {
+                0: "STATUS_UNKNOWN", 1: "STATUS_ACCEPTED", 2: "STATUS_EXECUTING",
+                3: "STATUS_CANCELING", 4: "STATUS_SUCCEEDED", 5: "STATUS_CANCELED", 6: "STATUS_ABORTED"
+            }
+            
+            active_goals = []
+            for status_item in status_list:
+                goal_info = status_item.get("goal_info", {})
+                goal_id = goal_info.get("goal_id", {}).get("uuid", "unknown")
+                status = status_item.get("status", -1)
+                stamp = goal_info.get("stamp", {})
+                
+                active_goals.append({
+                    "goal_id": goal_id,
+                    "status": status,
+                    "status_text": status_map.get(status, "UNKNOWN"),
+                    "timestamp": f"{stamp.get('sec', 0)}.{stamp.get('nanosec', 0)}"
+                })
+            
+            return {
+                "action_type": action_type,
+                "action_name": action_name,
+                "success": True,
+                "active_goals": active_goals,
+                "goal_count": len(active_goals),
+                "note": f"Found {len(active_goals)} active goal(s) for action {action_name}"
+            }
+                
+    except json.JSONDecodeError as e:
+        return {"error": f"Failed to parse status response: {str(e)}"}
+    except Exception as e:
+        return {
+            "action_type": action_type,
+            "action_name": action_name,
+            "success": False,
+            "error": f"Failed to get action status: {str(e)}",
+        }
 
 
 @mcp.tool(
@@ -2441,7 +2616,7 @@ def cancel_action_goal(action_name: str, goal_id: str) -> dict:
 )
 def ping_robot(ip: str, port: int, ping_timeout: float = 2.0, port_timeout: float = 2.0) -> dict:
     """
-    Ping an IP address and check if a specific port is open. Works only with ROS 2.
+    Ping an IP address and check if a specific port is open.
 
     Args:
         ip (str): The IP address to ping (e.g., '192.168.1.100')
