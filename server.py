@@ -1969,6 +1969,56 @@ def inspect_all_nodes() -> dict:
 
 ## ############################################################################################## ##
 ##
+##                       ROS ACTIONS
+##
+## ############################################################################################## ##
+
+
+@mcp.tool(description=("Get list of all available ROS actions.\nExample:\nget_actions()"))
+def get_actions() -> dict:
+    """
+    Get list of all available ROS actions.
+
+    Returns:
+        dict: Contains list of all active actions,
+            or a message string if no actions are found.
+    """
+    # rosbridge service call to get action list
+    message = {
+        "op": "call_service",
+        "service": "/rosapi/action_servers",
+        "type": "rosapi/ActionServers",
+        "args": {},
+        "id": "get_actions_request_1",
+    }
+
+    # Request action list from rosbridge
+    with ws_manager:
+        response = ws_manager.request(message)
+
+    # Handle error responses from ws_manager
+    if response and "error" in response:
+        return {"error": f"WebSocket error: {response['error']}"}
+
+    # Check for service response errors first
+    if response and "result" in response and not response["result"]:
+        # Service call failed - return error with details from values
+        if "values" in response and isinstance(response["values"], dict):
+            error_msg = response["values"].get("message", "Service call failed")
+        else:
+            error_msg = "Service call failed"
+        return {"error": f"Service call failed: {error_msg}"}
+
+    # Return action info if present
+    if response and "values" in response:
+        actions = response["values"].get("action_servers", [])
+        return {"actions": actions, "action_count": len(actions)}
+    else:
+        return {"warning": "No actions found or /rosapi/action_servers service not available"}
+
+
+## ############################################################################################## ##
+##
 ##                       NETWORK DIAGNOSTICS
 ##
 ## ############################################################################################## ##
