@@ -1975,10 +1975,14 @@ def inspect_all_nodes() -> dict:
 ## ############################################################################################## ##
 
 
-@mcp.tool(description=("Get list of all available ROS actions.\nExample:\nget_actions()"))
+@mcp.tool(
+    description=(
+        "Get list of all available ROS actions. Works only with ROS 2.\nExample:\nget_actions()"
+    )
+)
 def get_actions() -> dict:
     """
-    Get list of all available ROS actions.
+    Get list of all available ROS actions. Works only with ROS 2.
 
     Returns:
         dict: Contains list of all active actions,
@@ -2020,12 +2024,12 @@ def get_actions() -> dict:
 
 @mcp.tool(
     description=(
-        "Get the action type for a specific action.\nExample:\nget_action_type('/turtle1/rotate_absolute')"
+        "Get the action type for a specific action. Works only with ROS 2.\nExample:\nget_action_type('/turtle1/rotate_absolute')"
     )
 )
 def get_action_type(action: str) -> dict:
     """
-    Get the action type for a specific action.
+    Get the action type for a specific action. Works only with ROS 2.
 
     Args:
         action (str): The action name (e.g., '/turtle1/rotate_absolute')
@@ -2089,14 +2093,14 @@ def get_action_type(action: str) -> dict:
 
 @mcp.tool(
     description=(
-        "Get complete action details including goal, result, and feedback structures.\n"
+        "Get complete action details including goal, result, and feedback structures. Works only with ROS 2.\n"
         "Example:\n"
-        "get_action_details('turtlesim/action/RotateAbsolute')"
+        "get_action_details('turtlesim/action/RotateAbsolute')."
     )
 )
 def get_action_details(action_type: str) -> dict:
     """
-    Get complete action details including goal, result, and feedback structures.
+    Get complete action details including goal, result, and feedback structures. Works only with ROS 2.
 
     Args:
         action_type (str): The action type (e.g., 'turtlesim/action/RotateAbsolute')
@@ -2184,14 +2188,14 @@ def get_action_details(action_type: str) -> dict:
 
 @mcp.tool(
     description=(
-        "Get comprehensive information about all actions including types and available actions.\n"
+        "Get comprehensive information about all actions including types and available actions. Works only with ROS 2.\n"
         "Example:\n"
-        "inspect_all_actions()"
+        "inspect_all_actions()."
     )
 )
 def inspect_all_actions() -> dict:
     """
-    Get comprehensive information about all actions including types and available actions.
+    Get comprehensive information about all actions including types and available actions. Works only with ROS 2.
 
     Returns:
         dict: Contains detailed information about all actions,
@@ -2265,16 +2269,14 @@ def inspect_all_actions() -> dict:
 
 @mcp.tool(
     description=(
-        "Send a goal to a ROS action server.\n"
+        "Send a goal to a ROS action server. Works only with ROS 2.\n"
         "Example:\n"
         "send_action_goal('/turtle1/rotate_absolute', 'turtlesim/action/RotateAbsolute', {'theta': 1.57})"
     )
 )
-def send_action_goal(
-    action_name: str, action_type: str, goal: dict, timeout: float = None
-) -> dict:
+def send_action_goal(action_name: str, action_type: str, goal: dict, timeout: float = None) -> dict:
     """
-    Send a goal to a ROS action server.
+    Send a goal to a ROS action server. Works only with ROS 2.
 
     Args:
         action_name (str): The name of the action to call (e.g., '/turtle1/rotate_absolute')
@@ -2324,14 +2326,14 @@ def send_action_goal(
         actual_timeout = timeout if timeout is not None else 10.0  # Default 10 seconds
         start_time = time.time()
         last_feedback = None  # Store the last feedback message
-        
+
         while time.time() - start_time < actual_timeout:
             response = ws_manager.receive(timeout=actual_timeout - (time.time() - start_time))
-            
+
             if response:
                 try:
                     msg_data = json.loads(response)
-                    
+
                     # Handle action_result messages (final completion)
                     if msg_data.get("op") == "action_result":
                         return {
@@ -2342,16 +2344,16 @@ def send_action_goal(
                             "status": msg_data.get("status", "unknown"),
                             "result": msg_data.get("values", {}),
                         }
-                    
+
                     # Store action_feedback messages for timeout case
                     if msg_data.get("op") == "action_feedback":
                         last_feedback = msg_data
-                        
+
                 except json.JSONDecodeError:
                     continue
-            
+
             time.sleep(0.1)
-        
+
         # Timeout - return last feedback if available
         result = {
             "action": action_name,
@@ -2360,18 +2362,18 @@ def send_action_goal(
             "goal_id": goal_id,
             "error": f"Action timed out after {actual_timeout} seconds",
         }
-        
+
         if last_feedback:
             result["success"] = True
             result["last_feedback"] = last_feedback.get("values", {})
             result["note"] = "Action timed out, but partial progress was made"
-        
+
         return result
 
 
 @mcp.tool(
     description=(
-        "Cancel a specific action goal.\n"
+        "Cancel a specific action goal. Works only with ROS 2.\n"
         "Example:\n"
         "cancel_action_goal('/turtle1/rotate_absolute', 'goal_1758653551839_21acd486')"
     )
@@ -2439,7 +2441,7 @@ def cancel_action_goal(action_name: str, goal_id: str) -> dict:
 )
 def ping_robot(ip: str, port: int, ping_timeout: float = 2.0, port_timeout: float = 2.0) -> dict:
     """
-    Ping an IP address and check if a specific port is open.
+    Ping an IP address and check if a specific port is open. Works only with ROS 2.
 
     Args:
         ip (str): The IP address to ping (e.g., '192.168.1.100')
