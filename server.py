@@ -2321,7 +2321,7 @@ def send_action_goal(
             }
 
         # Wait for action completion - handle both action_result and action_feedback
-        actual_timeout = timeout if timeout is not None else 10.0  # Default 30 seconds
+        actual_timeout = timeout if timeout is not None else 10.0  # Default 10 seconds
         start_time = time.time()
         last_feedback = None  # Store the last feedback message
         
@@ -2367,6 +2367,59 @@ def send_action_goal(
             result["note"] = "Action timed out, but partial progress was made"
         
         return result
+
+
+@mcp.tool(
+    description=(
+        "Cancel a specific action goal.\n"
+        "Example:\n"
+        "cancel_action_goal('/turtle1/rotate_absolute', 'goal_1758653551839_21acd486')"
+    )
+)
+def cancel_action_goal(action_name: str, goal_id: str) -> dict:
+    """
+    Cancel a specific action goal. Works only with ROS 2.
+
+    Args:
+        action_name (str): The name of the action (e.g., '/turtle1/rotate_absolute')
+        goal_id (str): The goal ID to cancel
+
+    Returns:
+        dict: Contains cancellation status and result.
+    """
+    # Validate inputs
+    if not action_name or not action_name.strip():
+        return {"error": "Action name cannot be empty"}
+
+    if not goal_id or not goal_id.strip():
+        return {"error": "Goal ID cannot be empty"}
+
+    # Create cancel message for rosbridge (based on rosbridge source code)
+    cancel_message = {
+        "op": "cancel_action_goal",
+        "id": goal_id,  # Use the actual goal ID, not a new one
+        "action": action_name,
+        "feedback": True,  # Enable feedback messages
+    }
+
+    # Send the cancel request through rosbridge
+    with ws_manager:
+        # Send cancel request
+        send_error = ws_manager.send(cancel_message)
+        if send_error:
+            return {
+                "action": action_name,
+                "goal_id": goal_id,
+                "success": False,
+                "error": f"Failed to send cancel request: {send_error}",
+            }
+
+    return {
+        "action": action_name,
+        "goal_id": goal_id,
+        "success": True,
+        "note": "Cancel request sent successfully. Action may still be executing.",
+    }
 
 
 ## ############################################################################################## ##
