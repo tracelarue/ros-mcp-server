@@ -2271,7 +2271,7 @@ def inspect_all_actions() -> dict:
     )
 )
 def send_action_goal(
-    action_name: str, action_type: str, goal: dict, timeout: Optional[float] = None
+    action_name: str, action_type: str, goal: dict, timeout: float = None
 ) -> dict:
     """
     Send a goal to a ROS action server.
@@ -2280,7 +2280,7 @@ def send_action_goal(
         action_name (str): The name of the action to call (e.g., '/turtle1/rotate_absolute')
         action_type (str): The type of the action (e.g., 'turtlesim/action/RotateAbsolute')
         goal (dict): The goal message to send
-        timeout (float, optional): Timeout for action completion in seconds. Default is None (no timeout).
+        timeout (float, optional): Timeout for action completion in seconds. Default is None (uses default timeout).
 
     Returns:
         dict: Contains action response including goal_id, status, and result.
@@ -2320,45 +2320,53 @@ def send_action_goal(
                 "error": f"Failed to send action goal: {send_error}",
             }
 
-        # Wait for response
-        actual_timeout = timeout if timeout is not None else ws_manager.default_timeout
-        response = ws_manager.receive(timeout=actual_timeout)
-
-        if response:
-            try:
-                msg_data = json.loads(response)
-
-                # Check for status errors
-                if msg_data.get("op") == "status" and msg_data.get("level") == "error":
-                    return {
-                        "action": action_name,
-                        "action_type": action_type,
-                        "success": False,
-                        "error": f"Action goal failed: {msg_data.get('msg', 'Unknown error')}",
-                    }
-
-                # Check for action response
-                if msg_data.get("op") == "action_result":
-                    return {
-                        "action": action_name,
-                        "action_type": action_type,
-                        "success": True,
-                        "goal_id": goal_id,
-                        "status": msg_data.get("status", "unknown"),
-                        "result": msg_data.get("result", {}),
-                    }
-
-            except json.JSONDecodeError:
-                pass
-
-    return {
-        "action": action_name,
-        "action_type": action_type,
-        "success": True,
-        "goal_id": goal_id,
-        "status": "sent",
-        "note": "Goal sent successfully. Action may be executing asynchronously.",
-    }
+        # Wait for action completion - handle both action_result and action_feedback
+        actual_timeout = timeout if timeout is not None else 10.0  # Default 30 seconds
+        start_time = time.time()
+        last_feedback = None  # Store the last feedback message
+        
+        while time.time() - start_time < actual_timeout:
+            response = ws_manager.receive(timeout=actual_timeout - (time.time() - start_time))
+            
+            if response:
+                try:
+                    msg_data = json.loads(response)
+                    
+                    # Handle action_result messages (final completion)
+                    if msg_data.get("op") == "action_result":
+                        return {
+                            "action": action_name,
+                            "action_type": action_type,
+                            "success": True,
+                            "goal_id": goal_id,
+                            "status": msg_data.get("status", "unknown"),
+                            "result": msg_data.get("values", {}),
+                        }
+                    
+                    # Store action_feedback messages for timeout case
+                    if msg_data.get("op") == "action_feedback":
+                        last_feedback = msg_data
+                        
+                except json.JSONDecodeError:
+                    continue
+            
+            time.sleep(0.1)
+        
+        # Timeout - return last feedback if available
+        result = {
+            "action": action_name,
+            "action_type": action_type,
+            "success": False,
+            "goal_id": goal_id,
+            "error": f"Action timed out after {actual_timeout} seconds",
+        }
+        
+        if last_feedback:
+            result["success"] = True
+            result["last_feedback"] = last_feedback.get("values", {})
+            result["note"] = "Action timed out, but partial progress was made"
+        
+        return result
 
 
 ## ############################################################################################## ##
