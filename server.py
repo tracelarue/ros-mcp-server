@@ -2248,30 +2248,31 @@ def get_action_details(action_type: str) -> dict:
     return result
 
 
+
 @mcp.tool(
     description=(
-        "Get action status for a specific action type. Works only with ROS 2.\n"
+        "Get action status for a specific action name. Works only with ROS 2.\n"
         "Example:\n"
-        "get_action_status('action_tutorials_interfaces/action/Fibonacci')"
+        "get_action_status('/fibonacci')"
     )
 )
-def get_action_status(action_type: str) -> dict:
+def get_action_status(action_name: str) -> dict:
     """
-    Get action status for a specific action type. Works only with ROS 2.
+    Get action status for a specific action name. Works only with ROS 2.
 
     Args:
-        action_type (str): The action type (e.g., 'action_tutorials_interfaces/action/Fibonacci')
+        action_name (str): The action name (e.g., '/fibonacci')
 
     Returns:
         dict: Contains action status information including active goals and their status.
     """
     # Validate input
-    if not action_type or not action_type.strip():
-        return {"error": "Action type cannot be empty"}
+    if not action_name or not action_name.strip():
+        return {"error": "Action name cannot be empty"}
 
-    # Extract action name from action type
-    # For example: 'action_tutorials_interfaces/action/Fibonacci' -> '/fibonacci'
-    action_name = f"/{action_type.split('/')[-1].lower()}"
+    # Ensure action name starts with /
+    if not action_name.startswith('/'):
+        action_name = f"/{action_name}"
     
     # Try to get action status by subscribing to the status topic
     status_topic = f"{action_name}/_action/status"
@@ -2290,7 +2291,6 @@ def get_action_status(action_type: str) -> dict:
             send_error = ws_manager.send(message)
             if send_error:
                 return {
-                    "action_type": action_type,
                     "action_name": action_name,
                     "success": False,
                     "error": f"Failed to subscribe to status topic: {send_error}",
@@ -2300,7 +2300,6 @@ def get_action_status(action_type: str) -> dict:
             response = ws_manager.receive(timeout=3.0)
             if not response:
                 return {
-                    "action_type": action_type,
                     "action_name": action_name,
                     "success": False,
                     "error": "No response from action status topic",
@@ -2313,7 +2312,6 @@ def get_action_status(action_type: str) -> dict:
             
             if "msg" not in response_data or "status_list" not in response_data["msg"]:
                 return {
-                    "action_type": action_type,
                     "action_name": action_name,
                     "success": True,
                     "active_goals": [],
@@ -2342,7 +2340,6 @@ def get_action_status(action_type: str) -> dict:
                 })
             
             return {
-                "action_type": action_type,
                 "action_name": action_name,
                 "success": True,
                 "active_goals": active_goals,
@@ -2354,7 +2351,6 @@ def get_action_status(action_type: str) -> dict:
         return {"error": f"Failed to parse status response: {str(e)}"}
     except Exception as e:
         return {
-            "action_type": action_type,
             "action_name": action_name,
             "success": False,
             "error": f"Failed to get action status: {str(e)}",
