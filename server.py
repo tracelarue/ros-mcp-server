@@ -1,4 +1,5 @@
 import argparse
+import asyncio
 import io
 import json
 import os
@@ -6,7 +7,7 @@ import time
 import uuid
 from typing import Any, Dict, List, Optional, Union
 
-from fastmcp import FastMCP
+from fastmcp import Context, FastMCP
 from fastmcp.utilities.types import Image
 from PIL import Image as PILImage
 
@@ -2463,7 +2464,9 @@ def inspect_all_actions() -> dict:
         "send_action_goal('/turtle1/rotate_absolute', 'turtlesim/action/RotateAbsolute', {'theta': 1.57})"
     )
 )
-def send_action_goal(action_name: str, action_type: str, goal: dict, timeout: float = None) -> dict:
+async def send_action_goal(
+    action_name: str, action_type: str, goal: dict, timeout: float = None, ctx: Context = None
+) -> dict:
     """
     Send a goal to a ROS action server. Works only with ROS 2.
 
@@ -2515,9 +2518,12 @@ def send_action_goal(action_name: str, action_type: str, goal: dict, timeout: fl
         actual_timeout = timeout if timeout is not None else 10.0  # Default 10 seconds
         start_time = time.time()
         last_feedback = None  # Store the last feedback message
+        feedback_count = 0  # Count feedback messages received
 
         while time.time() - start_time < actual_timeout:
-            response = ws_manager.receive(timeout=actual_timeout - (time.time() - start_time))
+            elapsed_time = time.time() - start_time
+
+            response = ws_manager.receive(timeout=actual_timeout - elapsed_time)
 
             if response:
                 try:
@@ -2525,6 +2531,16 @@ def send_action_goal(action_name: str, action_type: str, goal: dict, timeout: fl
 
                     # Handle action_result messages (final completion)
                     if msg_data.get("op") == "action_result":
+                        # Report completion
+                        if ctx:
+                            try:
+                                completion_msg = f"Action completed successfully (received {feedback_count} feedback messages)"
+                                await ctx.report_progress(
+                                    progress=feedback_count, total=None, message=completion_msg
+                                )
+                            except Exception:
+                                pass
+
                         return {
                             "action": action_name,
                             "action_type": action_type,
@@ -2534,16 +2550,41 @@ def send_action_goal(action_name: str, action_type: str, goal: dict, timeout: fl
                             "result": msg_data.get("values", {}),
                         }
 
-                    # Store action_feedback messages for timeout case
+                    # Store action_feedback messages and report progress
                     if msg_data.get("op") == "action_feedback":
+                        feedback_count += 1
                         last_feedback = msg_data
+
+                        # Report feedback progress
+                        if ctx:
+                            try:
+                                feedback_values = msg_data.get("values", {})
+                                feedback_msg = f"Action feedback #{feedback_count}: {str(feedback_values)[:100]}..."
+                                await ctx.report_progress(
+                                    progress=feedback_count, total=None, message=feedback_msg
+                                )
+                            except Exception:
+                                pass
 
                 except json.JSONDecodeError:
                     continue
+            else:
+                # No response received, continue waiting
+                pass
 
-            time.sleep(0.1)
+            await asyncio.sleep(0.1)
 
         # Timeout - return last feedback if available
+        if ctx and feedback_count > 0:
+            try:
+                await ctx.report_progress(
+                    progress=feedback_count,
+                    total=None,
+                    message=f"Action timed out after {actual_timeout} seconds (received {feedback_count} feedback messages)",
+                )
+            except Exception:
+                pass
+
         result = {
             "action": action_name,
             "action_type": action_type,
