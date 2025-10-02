@@ -12,12 +12,13 @@ Control ROS robots with voice commands using Google's Gemini Live API.
 
 2. **Get Google API Key**: Visit [Google AI Studio](https://aistudio.google.com) and create an API key
 
-3. **Create `.env` file**:
+3. **Create a `.env` file in the same folder as gemini_client.py**:
    ```env
    GOOGLE_API_KEY="your_google_api_key_here"
    ```
 
-4. **Create `mcp_config.json`**:Replace `/absolute/path/to/ros-mcp-server` with your actual path.
+4. **Create `mcp_config.json` in the same folder as gemini_client.py**:
+Replace `/absolute/path/to/ros-mcp-server` with your actual path.
    ```json
    {
       "mcpServers": {
@@ -25,7 +26,7 @@ Control ROS robots with voice commands using Google's Gemini Live API.
           "command": "uv",
           "args": [
             "--directory",
-            "/home/trace/ros-mcp-server", 
+            "/absolute/path/to/ros-mcp-server", 
             "run",
             "server.py"
           ]
@@ -39,7 +40,7 @@ Control ROS robots with voice commands using Google's Gemini Live API.
 **Start Gemini Live:**
 ```bash
 cd ros-mcp-server/examples/2_gemini/gemini_live
-uv run gemini_live.py --mode=none
+uv run gemini_client.py --mode=none
 ```
 
 **Video modes:**
@@ -62,7 +63,8 @@ Type `q` + Enter to quit.
 ```bash
 # Terminal 1: Launch rosbridge
 ros2 launch rosbridge_server rosbridge_websocket_launch.xml
-
+```
+```bash
 # Terminal 2: Start turtlesim
 ros2 run turtlesim turtlesim_node
 ```

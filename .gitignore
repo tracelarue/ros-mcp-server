@@ -179,3 +179,4 @@ pyrightconfig.json
 
 # camera
 /camera/*
+examples/2_gemini/gemini_live/mcp_config.json
