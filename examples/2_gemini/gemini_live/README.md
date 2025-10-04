@@ -14,7 +14,7 @@ Control ROS robots with natural language voice commands using Google's Gemini Li
 2. **Install system dependencies** (required for audio):
 ```bash
 sudo apt-get update
-sudo apt-get install portaudio19-dev
+sudo apt-get install python3-dev portaudio19-dev
 ```
 
 3. **Install additional dependencies for Gemini Live**:
@@ -34,7 +34,10 @@ uv pip install google-genai pyaudio python-dotenv mss exceptiongroup taskgroup
 5. **Create a `.env` file in the `gemini_live` folder**:
 ```bash
 cd examples/2_gemini/gemini_live
-echo "GOOGLE_API_KEY=your_google_api_key_here" > .env
+```
+
+```env
+GOOGLE_API_KEY="your_google_api_key_here"
 ```
 Replace with your API key.
 
@@ -79,7 +82,7 @@ uv run gemini_client.py
 - `--responses=AUDIO` - Audio responses (default)
 
 **Microphone muting** (`--active-muting`):
-- `--active-muting=true` - Mute mic during audio playback (default, prevents echo/feedback)
+- `--active-muting=true` - Mute mic during audio playback (default, prevents echo/feedback). Recommended if not using headphones.
 - `--active-muting=false` - Keep mic active during audio playback
 
 **Example usage:**
