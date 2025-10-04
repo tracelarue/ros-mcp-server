@@ -5,19 +5,40 @@ Control ROS robots with voice commands using Google's Gemini Live API.
 **Pre-requisites** See the [installation instructions](../../../docs/installation.md) for detailed setup steps.
 
 **Tested In:** Ubuntu 22.04, Python 3.10, ROS2 Humble
+(Only works in Ubuntu)
 
 ## Quick Setup
 
 1. **Install ROS MCP Server**: Follow the [installation guide](../../../docs/installation.md)
 
-2. **Get Google API Key**: Visit [Google AI Studio](https://aistudio.google.com) and create an API key
+2. **Install system dependencies** (required for audio):
+   ```bash
+   sudo apt-get update
+   sudo apt-get install portaudio19-dev
+   ```
 
-3. **Create a `.env` file in the same folder as gemini_client.py**:
+3. **Install additional dependencies for Gemini Live**:
+   
+   ```bash
+   # Navigate to the ros-mcp-server root directory
+   cd ros-mcp-server
+   
+   # Activate the existing virtual environment
+   source .venv/bin/activate
+   
+   # Install the additional dependencies needed for Gemini Live
+   pip install google-genai pyaudio python-dotenv mss exceptiongroup taskgroup
+   ```
+
+4. **Get Google API Key**: Visit [Google AI Studio](https://aistudio.google.com) and create an API key
+
+5. **Create a `.env` file in the `gemini_live` folder**:
    ```env
    GOOGLE_API_KEY="your_google_api_key_here"
    ```
+   Replace with your API key.
 
-4. **Create `mcp_config.json` in the same folder as gemini_client.py**:
+6. **Create `mcp_config.json` in the gemini_live folder**:
 Replace `/absolute/path/to/ros-mcp-server` with your actual path.
    ```json
    {
@@ -39,27 +60,41 @@ Replace `/absolute/path/to/ros-mcp-server` with your actual path.
 
 **Start Gemini Live:**
 ```bash
-cd ros-mcp-server/examples/2_gemini/gemini_live
-uv run gemini_client.py --mode=none
+# Navigate to ros-mcp-server root and activate the virtual environment
+cd ros-mcp-server
+source .venv/bin/activate
+
+# Navigate to the gemini_live example
+cd examples/2_gemini/gemini_live
+
+# Run the client (with defaults: no video, audio responses, mic muting enabled)
+python gemini_client.py
 ```
 
-**Video modes:**
-- `--mode=none` - Audio only
-- `--mode=camera` - Include camera
-- `--mode=screen` - Include screen capture
+**Command-line options:**
 
-**Example Voice commands:**
-- "Connect to the robot on ip _ and port _ "
-- "List all available tools"
-- "What ROS topics are available?"
-- "Go to the kitchen" 
-- "Move forward at 1 m/s for 1 s"
+**Video modes** (`--video`):
+- `--video=none` - Audio only (default)
+- `--video=camera` - Include camera feed
+- `--video=screen` - Include screen capture
 
+**Response modes** (`--responses`):
+- `--responses=TEXT` - Text responses only
+- `--responses=AUDIO` - Audio responses (default)
+
+**Microphone muting** (`--active-muting`):
+- `--active-muting=true` - Mute mic during audio playback (default, prevents echo/feedback)
+- `--active-muting=false` - Keep mic active during audio playback
+
+**Example usage:**
+```bash
+python gemini_client.py --video=camera --responses=TEXT --active-muting=false
+```
 Type `q` + Enter to quit.
 
 ## Test with Turtlesim
 
-**Start rosbridge and turtlesim** (separate terminals):
+**Start rosbridge and turtlesim**:
 ```bash
 # Terminal 1: Launch rosbridge
 ros2 launch rosbridge_server rosbridge_websocket_launch.xml
@@ -96,7 +131,15 @@ See [Turtlesim Tutorial](../../1_turtlesim/README.md) for more examples.
 - Check key is active in Google AI Studio
 
 **Virtual environment issues?**
-- Exit any active environments: `deactivate`
-- UV creates its own environment automatically 
+- Make sure you activate the venv from the ros-mcp-server root: `cd ros-mcp-server && source .venv/bin/activate`
+- This example uses the same virtual environment as the main ros-mcp-server project
+- To deactivate when done: `deactivate`
 
+**Dependency issues?**
+- If you get import errors, make sure you installed the additional dependencies: `pip install google-genai pyaudio python-dotenv mss exceptiongroup taskgroup`
+
+##
+Contributed by Trace LaRue
+traceglarue@gmail.com
+[www.traceglarue.com](https://www.traceglarue.com)
 

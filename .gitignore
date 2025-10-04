@@ -179,4 +179,8 @@ pyrightconfig.json
 
 # camera
 /camera/*
+
+# Example-specific config files (user-specific)
 examples/2_gemini/gemini_live/mcp_config.json
+examples/2_gemini/gemini_live/.env
+examples/2_gemini/gemini_live/venv/
