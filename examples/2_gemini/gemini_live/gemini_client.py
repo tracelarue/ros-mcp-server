@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import base64
 import io
@@ -6,13 +7,10 @@ import sys
 import traceback
 
 import cv2
-import pyaudio
-import PIL.Image
 import mss
-
-import argparse
+import PIL.Image
+import pyaudio
 from dotenv import load_dotenv
-
 from google import genai
 from google.genai import types
 from mcp import ClientSession, StdioServerParameters
@@ -21,8 +19,8 @@ from mcp.client.stdio import stdio_client
 load_dotenv()
 
 if sys.version_info < (3, 11, 0):
-    import taskgroup
     import exceptiongroup
+    import taskgroup
 
     asyncio.TaskGroup = taskgroup.TaskGroup
     asyncio.ExceptionGroup = exceptiongroup.ExceptionGroup
@@ -32,7 +30,7 @@ AUDIO_FORMAT = pyaudio.paInt16
 AUDIO_CHANNELS = 1
 SEND_SAMPLE_RATE = 16000
 RECEIVE_SAMPLE_RATE = 24000
-CHUNK_SIZE = 1024 
+CHUNK_SIZE = 1024
 
 # Gemini Live model and default settings
 MODEL = "models/gemini-2.5-flash-live-preview"
@@ -42,17 +40,13 @@ DEFAULT_RESPONSE_MODALITY = "AUDIO"  # Options: "TEXT", "AUDIO"
 # System instructions to guide Gemini's behavior and tool usage.
 system_instructions = """
     You have access to the tools provided by ros_mcp_server.
-    To connect to the robot, use ip 192.168.52.129, port 9090. When successfuly connected, reply just "Succesfully connected".
+    When successfuly connected, reply just "Succesfully connected".
     """
 
 # Create server parameters for stdio connection
 server_params = StdioServerParameters(
     command="uv",  # Executable
-    args=[
-        "--directory",
-        "/home/trace/ros-mcp-server",
-        "run",
-        "server.py"],
+    args=["--directory", "/home/trace/ros-mcp-server", "run", "server.py"],
     env=None,
 )
 
@@ -72,7 +66,12 @@ class AudioLoop:
     Manages real-time audio streaming, video capture, and tool calls through MCP
     """
 
-    def __init__(self, video_mode=DEFAULT_VIDEO_MODE, response_modality=DEFAULT_RESPONSE_MODALITY, active_muting=True):
+    def __init__(
+        self,
+        video_mode=DEFAULT_VIDEO_MODE,
+        response_modality=DEFAULT_RESPONSE_MODALITY,
+        active_muting=True,
+    ):
         """
         Initialize the AudioLoop with specified video mode and response modality.
         """
@@ -110,8 +109,7 @@ class AudioLoop:
                 break
 
             await self.session.send_client_content(
-                turns={"role": "user", "parts": [{"text": text or "."}]},
-                turn_complete=True
+                turns={"role": "user", "parts": [{"text": text or "."}]}, turn_complete=True
             )
 
     async def handle_tool_call(self, tool_call):
@@ -132,13 +130,13 @@ class AudioLoop:
             # Convert MCP result to JSON-serializable format
             # The result is a CallToolResult object with 'content' list
             result_content = []
-            if hasattr(result, 'content'):
+            if hasattr(result, "content"):
                 for content_item in result.content:
                     # Handle TextContent objects with 'text' attribute
-                    if hasattr(content_item, 'text'):
+                    if hasattr(content_item, "text"):
                         result_content.append(content_item.text)
                     # Handle objects that can be dumped to dict
-                    elif hasattr(content_item, 'model_dump'):
+                    elif hasattr(content_item, "model_dump"):
                         dumped = content_item.model_dump()
                         # If it's a dict, convert to string representation
                         if isinstance(dumped, dict):
@@ -154,7 +152,7 @@ class AudioLoop:
                     # Fallback to string conversion
                     else:
                         result_content.append(str(content_item))
-            
+
             # Join content items into a single result string
             result_text = "\n".join(result_content) if result_content else str(result)
 
@@ -303,7 +301,7 @@ class AudioLoop:
 
         # Configure overflow handling for debug vs release
         overflow_kwargs = {"exception_on_overflow": False} if __debug__ else {}
-        
+
         stream_active = True
 
         # Continuously read audio data
@@ -311,13 +309,13 @@ class AudioLoop:
             # Check if mic should be active
             async with self.mic_lock:
                 mic_currently_active = self.mic_active
-            
+
             if mic_currently_active:
                 # If stream was stopped, restart it
                 if not stream_active:
                     await asyncio.to_thread(self.audio_stream.start_stream)
                     stream_active = True
-                
+
                 # Small sleep to prevent CPU overuse
                 await asyncio.sleep(0.01)
                 # Read audio data
@@ -330,7 +328,7 @@ class AudioLoop:
                 if stream_active:
                     await asyncio.to_thread(self.audio_stream.stop_stream)
                     stream_active = False
-                
+
                 # Just sleep while muted - no audio is being captured
                 await asyncio.sleep(0.1)
 
@@ -354,7 +352,7 @@ class AudioLoop:
                         # Handle audio data from inline_data parts
                         if part.inline_data:
                             self.audio_in_queue.put_nowait(part.inline_data.data)
-                        
+
                         # Handle text responses
                         if part.text:
                             text_content = part.text
@@ -437,7 +435,7 @@ class AudioLoop:
                         else:
                             audio_playing = False
                     continue
-                
+
                 # If this is the first audio chunk in a sequence, mute the microphone (if enabled)
                 if not audio_playing:
                     if self.active_muting:
@@ -445,15 +443,15 @@ class AudioLoop:
                             self.mic_active = False
                             audio_playing = True
                             print("🔇 Microphone muted while audio is playing")
-                        
+
                         # Add a delay to ensure the mic is fully muted before audio starts
                         await asyncio.sleep(0.25)
                     else:
                         audio_playing = True
-                
+
                 # Play the audio
                 await asyncio.to_thread(audio_stream.write, audio_bytes)
-                
+
                 # Check if the queue is empty (reached end of audio)
                 if self.audio_in_queue.qsize() == 0:
                     # Wait briefly to make sure no more chunks are coming
@@ -468,7 +466,7 @@ class AudioLoop:
                                     print("🎤 Microphone unmuted after audio playback")
                         else:
                             audio_playing = False
-            
+
             except Exception as e:
                 print(f"🔴 Audio playback error: {str(e)}")
                 # Re-enable microphone in case of error (if muting is enabled)
@@ -492,10 +490,9 @@ class AudioLoop:
         # Connect to MCP server using stdio
         async with stdio_client(server_params) as (read, write):
             async with ClientSession(read, write) as mcp_session:
-
                 # Initialize the connection between client and server
                 await mcp_session.initialize()
-                
+
                 # Store MCP session for tool calling
                 self.mcp_session = mcp_session
 
@@ -579,9 +576,7 @@ class AudioLoop:
                             prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name="Charon")
                         )
                     ),
-                    system_instruction=types.Content(
-                        parts=[types.Part(text=system_instructions)]
-                    ),
+                    system_instruction=types.Content(parts=[types.Part(text=system_instructions)]),
                     tools=tools,
                 )
 
@@ -595,9 +590,7 @@ class AudioLoop:
 
                         # Initialize communication queues
                         self.audio_in_queue = asyncio.Queue()  # Audio from Gemini
-                        self.out_queue = asyncio.Queue(
-                            maxsize=5
-                        )  # Data to Gemini (limited size)
+                        self.out_queue = asyncio.Queue(maxsize=5)  # Data to Gemini (limited size)
 
                         # Start all async tasks
                         send_text_task = task_group.create_task(self.send_text())
@@ -648,7 +641,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--active-muting",
-        type=lambda x: x.lower() == 'true',
+        type=lambda x: x.lower() == "true",
         default=True,
         help="Mute microphone during audio playback (true/false, default: true)",
     )
@@ -656,8 +649,6 @@ if __name__ == "__main__":
 
     # Initialize and run the audio loop
     audio_loop = AudioLoop(
-        video_mode=args.video,
-        response_modality=args.responses,
-        active_muting=args.active_muting
+        video_mode=args.video, response_modality=args.responses, active_muting=args.active_muting
     )
     asyncio.run(audio_loop.run())
