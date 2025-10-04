@@ -12,63 +12,59 @@ Control ROS robots with voice commands using Google's Gemini Live API.
 1. **Install ROS MCP Server**: Follow the [installation guide](../../../docs/installation.md)
 
 2. **Install system dependencies** (required for audio):
-   ```bash
-   sudo apt-get update
-   sudo apt-get install portaudio19-dev
-   ```
+```bash
+sudo apt-get update
+sudo apt-get install portaudio19-dev
+```
 
 3. **Install additional dependencies for Gemini Live**:
-   
-   ```bash
-   # Navigate to the ros-mcp-server root directory
-   cd ros-mcp-server
-   
-   # Activate the existing virtual environment
-   source .venv/bin/activate
-   
-   # Install the additional dependencies needed for Gemini Live
-   pip install google-genai pyaudio python-dotenv mss exceptiongroup taskgroup
-   ```
+
+```bash
+# Navigate to the ros-mcp-server root directory
+cd ros-mcp-server
+
+# Install the additional dependencies needed for Gemini Live
+uv pip install google-genai pyaudio python-dotenv mss exceptiongroup taskgroup
+```
+
+**Note**: The main ros-mcp-server project already includes most dependencies (mcp, opencv-python, pillow). We only need to add the Gemini-specific packages.
 
 4. **Get Google API Key**: Visit [Google AI Studio](https://aistudio.google.com) and create an API key
 
 5. **Create a `.env` file in the `gemini_live` folder**:
-   ```env
-   GOOGLE_API_KEY="your_google_api_key_here"
-   ```
-   Replace with your API key.
+```bash
+cd /examples/2_gemini/gemini_live
+echo "GOOGLE_API_KEY="your_google_api_key_here"" > .env
+```
+Replace with your API key.
 
 6. **Create `mcp_config.json` in the gemini_live folder**:
 Replace `/absolute/path/to/ros-mcp-server` with your actual path.
-   ```json
-   {
-      "mcpServers": {
-        "ros-mcp-server": {
-          "command": "uv",
-          "args": [
-            "--directory",
-            "/absolute/path/to/ros-mcp-server", 
-            "run",
-            "server.py"
-          ]
-        }
+```json
+{
+   "mcpServers": {
+      "ros-mcp-server": {
+         "command": "uv",
+         "args": [
+         "--directory",
+         "/absolute/path/to/ros-mcp-server", 
+         "run",
+         "server.py"
+         ]
       }
-    }
-   ```
+   }
+   }
+```
 
 ## Usage
 
 **Start Gemini Live:**
 ```bash
-# Navigate to ros-mcp-server root and activate the virtual environment
-cd ros-mcp-server
-source .venv/bin/activate
-
-# Navigate to the gemini_live example
-cd examples/2_gemini/gemini_live
+# Navigate to the gemini_live folder
+cd ros-mcp-server/examples/2_gemini/gemini_live
 
 # Run the client (with defaults: no video, audio responses, mic muting enabled)
-python gemini_client.py
+uv run gemini_client.py
 ```
 
 **Command-line options:**
@@ -88,7 +84,7 @@ python gemini_client.py
 
 **Example usage:**
 ```bash
-python gemini_client.py --video=camera --responses=TEXT --active-muting=false
+uv run gemini_client.py --video=camera --responses=TEXT --active-muting=false
 ```
 Type `q` + Enter to quit.
 
@@ -130,13 +126,8 @@ See [Turtlesim Tutorial](../../1_turtlesim/README.md) for more examples.
 - Verify `.env` file exists with correct key
 - Check key is active in Google AI Studio
 
-**Virtual environment issues?**
-- Make sure you activate the venv from the ros-mcp-server root: `cd ros-mcp-server && source .venv/bin/activate`
-- This example uses the same virtual environment as the main ros-mcp-server project
-- To deactivate when done: `deactivate`
-
 **Dependency issues?**
-- If you get import errors, make sure you installed the additional dependencies: `pip install google-genai pyaudio python-dotenv mss exceptiongroup taskgroup`
+- If you get import errors, make sure you installed the additional dependencies: `uv pip install google-genai pyaudio python-dotenv mss exceptiongroup taskgroup`
 
 ##
 Contributed by Trace LaRue
