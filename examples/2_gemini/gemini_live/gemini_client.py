@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import base64
 import io
+import json
 import os
 import sys
 import traceback
@@ -43,11 +44,39 @@ system_instructions = """
     When successfuly connected, reply just "Succesfully connected".
     """
 
+
+# Load MCP server configuration from mcp_config.json
+def load_mcp_config():
+    """Load MCP server configuration from mcp_config.json file."""
+    config_path = os.path.join(os.path.dirname(__file__), "mcp_config.json")
+
+    if not os.path.exists(config_path):
+        raise FileNotFoundError(
+            f"mcp_config.json not found at {config_path}. "
+            "Please create it following the README instructions."
+        )
+
+    with open(config_path, "r") as f:
+        config = json.load(f)
+
+    # Extract ros-mcp-server configuration
+    if "mcpServers" not in config or "ros-mcp-server" not in config["mcpServers"]:
+        raise ValueError(
+            "Invalid mcp_config.json: missing 'mcpServers.ros-mcp-server' configuration"
+        )
+
+    server_config = config["mcpServers"]["ros-mcp-server"]
+    return server_config
+
+
+# Load server configuration
+mcp_config = load_mcp_config()
+
 # Create server parameters for stdio connection
 server_params = StdioServerParameters(
-    command="uv",  # Executable
-    args=["--directory", "/home/trace/ros-mcp-server", "run", "server.py"],
-    env=None,
+    command=mcp_config["command"],
+    args=mcp_config["args"],
+    env=mcp_config.get("env"),
 )
 
 client = genai.Client(

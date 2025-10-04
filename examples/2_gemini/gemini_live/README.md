@@ -1,6 +1,6 @@
 # Gemini Live with ROS MCP Server
 
-Control ROS robots with voice commands using Google's Gemini Live API.
+Control ROS robots with natural language voice commands using Google's Gemini Live API.
 
 **Pre-requisites** See the [installation instructions](../../../docs/installation.md) for detailed setup steps.
 
@@ -33,8 +33,8 @@ uv pip install google-genai pyaudio python-dotenv mss exceptiongroup taskgroup
 
 5. **Create a `.env` file in the `gemini_live` folder**:
 ```bash
-cd /examples/2_gemini/gemini_live
-echo "GOOGLE_API_KEY="your_google_api_key_here"" > .env
+cd examples/2_gemini/gemini_live
+echo "GOOGLE_API_KEY=your_google_api_key_here" > .env
 ```
 Replace with your API key.
 
@@ -53,7 +53,7 @@ Replace `/absolute/path/to/ros-mcp-server` with your actual path.
          ]
       }
    }
-   }
+}
 ```
 
 ## Usage
