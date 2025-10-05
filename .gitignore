@@ -186,4 +186,4 @@ examples/2_gemini/gemini_live/.env
 examples/2_gemini/gemini_live/venv/
 
 # tests
-tests/*
+tests/
