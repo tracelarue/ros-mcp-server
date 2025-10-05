@@ -2,14 +2,14 @@ import base64
 import json
 import os
 import threading
-from typing import Optional, Union
+from typing import Union
 
 import cv2
 import numpy as np
 import websocket
 
 
-def parse_json(raw: Optional[Union[str, bytes]]) -> Optional[dict]:
+def parse_json(raw: Union[str, bytes] | None) -> dict | None:
     """
     Safely parse JSON from string or bytes.
 
@@ -30,9 +30,9 @@ def parse_json(raw: Optional[Union[str, bytes]]) -> Optional[dict]:
         return None
 
 
-def parse_image(raw: Optional[Union[str, bytes]]) -> Optional[dict]:
+def parse_image(raw: Union[str, bytes] | None) -> dict | None:
     """
-    Decode a image message (json with base64 data) and save as PNG.
+    Decode an image message (json with base64 data) and save it as JPEG.
 
     Args:
         raw: JSON string, bytes, or None
@@ -51,11 +51,27 @@ def parse_image(raw: Optional[Union[str, bytes]]) -> Optional[dict]:
         print("[Image] Invalid JSON or missing 'msg' field.")
         return None
 
-    height, width, encoding = msg.get("height"), msg.get("width"), msg.get("encoding")
     data_b64 = msg.get("data")
+    if not data_b64:
+        print("[Image] Missing 'data' field in message.")
+        return None
 
-    if not all([height, width, encoding, data_b64]):
-        print("[Image] Missing required fields in message.")
+    # ✅ Ensure output directory exists
+    os.makedirs("./camera", exist_ok=True)
+
+    # Case 1: CompressedImage (already JPEG/PNG encoded)
+    if "format" in msg and msg["format"].lower() in ["jpeg", "jpg", "png"]:
+        image_bytes = base64.b64decode(data_b64)
+        path = "./camera/received_image.jpeg"
+        with open(path, "wb") as f:
+            f.write(image_bytes)
+        print(f"[Image] Saved CompressedImage to {path}")
+        return result if isinstance(result, dict) else None
+
+    # Case 2: Raw Image (rgb8, bgr8, mono8)
+    height, width, encoding = msg.get("height"), msg.get("width"), msg.get("encoding")
+    if not all([height, width, encoding]):
+        print("[Image] Missing required fields for raw image.")
         return None
 
     # Decode base64 to numpy array
@@ -78,13 +94,10 @@ def parse_image(raw: Optional[Union[str, bytes]]) -> Optional[dict]:
         print(f"[Image] Reshape error: {e}")
         return None
 
-    if not os.path.exists("./camera"):
-        os.makedirs("./camera")
-
-    success = cv2.imwrite(
-        "./camera/received_image.jpeg", img_cv, [cv2.IMWRITE_JPEG_QUALITY, 95]
-    )  # Save as JPEG with quality 95
+    # Save as JPEG with quality 95
+    success = cv2.imwrite("./camera/received_image.jpeg", img_cv, [cv2.IMWRITE_JPEG_QUALITY, 95])
     if success:
+        print("[Image] Saved raw Image to ./camera/received_image.jpeg")
         return result if isinstance(result, dict) else None
     else:
         return None
@@ -106,7 +119,7 @@ class WebSocketManager:
         self.port = port
         print(f"[WebSocket] IP set to {self.ip}:{self.port}")
 
-    def connect(self) -> Optional[str]:
+    def connect(self) -> str | None:
         """
         Attempt to establish a WebSocket connection.
 
@@ -128,7 +141,7 @@ class WebSocketManager:
                     return error_msg
             return None  # already connected, no error
 
-    def send(self, message: dict) -> Optional[str]:
+    def send(self, message: dict) -> str | None:
         """
         Send a JSON-serializable message over WebSocket.
 
@@ -159,16 +172,16 @@ class WebSocketManager:
 
             return "[WebSocket] Not connected, send aborted."
 
-    def receive(self, timeout: Optional[float] = None) -> Optional[Union[str, bytes]]:
+    def receive(self, timeout: float | None = None) -> Union[str, bytes] | None:
         """
         Receive a single message from rosbridge within the given timeout.
 
         Args:
-            timeout (Optional[float]): Seconds to wait before timing out.
+            timeout (float | None): Seconds to wait before timing out.
                                      If None, uses the default timeout.
 
         Returns:
-            Optional[str]: JSON string received from rosbridge, or None if timeout/error.
+            str | None: JSON string received from rosbridge, or None if timeout/error.
         """
         with self.lock:
             self.connect()
@@ -186,13 +199,13 @@ class WebSocketManager:
                     return None
             return None
 
-    def request(self, message: dict, timeout: Optional[float] = None) -> dict:
+    def request(self, message: dict, timeout: float | None = None) -> dict:
         """
         Send a request to Rosbridge and return the response.
 
         Args:
             message (dict): The Rosbridge message dictionary to send.
-            timeout (Optional[float]): Seconds to wait for a response.
+            timeout (float | None): Seconds to wait for a response.
                                      If None, uses the default timeout.
 
         Returns:
