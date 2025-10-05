@@ -5,7 +5,7 @@ import json
 import os
 import time
 import uuid
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Union
 
 from fastmcp import Context, FastMCP
 from fastmcp.utilities.types import Image
@@ -497,9 +497,9 @@ def inspect_all_topics() -> dict:
 def subscribe_once(
     topic: str = "",
     msg_type: str = "",
-    timeout: float = None,
-    queue_length: Optional[int] = None,
-    throttle_rate_ms: Optional[int] = None,
+    timeout: float | None = None,
+    queue_length: int | None = None,
+    throttle_rate_ms: int | None = None,
 ) -> dict:
     """
     Subscribe to a given ROS topic via rosbridge and return the first message received.
@@ -507,9 +507,9 @@ def subscribe_once(
     Args:
         topic (str): The ROS topic name (e.g., "/cmd_vel", "/joint_states").
         msg_type (str): The ROS message type (e.g., "geometry_msgs/Twist").
-        timeout (Optional[float]): Timeout in seconds. If None, uses the default timeout.
-        queue_length (Optional[int]): How many messages to buffer before dropping old ones. Must be ≥ 1.
-        throttle_rate_ms (Optional[int]): Minimum interval between messages in milliseconds. Must be ≥ 0.
+        timeout (float | None): Timeout in seconds. If None, uses the default timeout.
+        queue_length (int | None): How many messages to buffer before dropping old ones. Must be ≥ 1.
+        throttle_rate_ms (int | None): Minimum interval between messages in milliseconds. Must be ≥ 0.
 
     Returns:
         dict:
@@ -679,8 +679,8 @@ def subscribe_for_duration(
     msg_type: str = "",
     duration: float = 5.0,
     max_messages: int = 100,
-    queue_length: Optional[int] = None,
-    throttle_rate_ms: Optional[int] = None,
+    queue_length: int | None = None,
+    throttle_rate_ms: int | None = None,
 ) -> dict:
     """
     Subscribe to a ROS topic via rosbridge for a fixed duration and collect messages.
@@ -690,8 +690,8 @@ def subscribe_for_duration(
         msg_type (str): ROS message type (e.g. "geometry_msgs/Twist")
         duration (float): How long (seconds) to listen for messages
         max_messages (int): Maximum number of messages to collect before stopping
-        queue_length (Optional[int]): How many messages to buffer before dropping old ones. Must be ≥ 1.
-        throttle_rate_ms (Optional[int]): Minimum interval between messages in milliseconds. Must be ≥ 0.
+        queue_length (int | None): How many messages to buffer before dropping old ones. Must be ≥ 1.
+        throttle_rate_ms (int | None): Minimum interval between messages in milliseconds. Must be ≥ 0.
 
     Returns:
         dict:
@@ -1204,7 +1204,7 @@ def inspect_all_services() -> dict:
     )
 )
 def call_service(
-    service_name: str, service_type: str, request: dict, timeout: Optional[float] = None
+    service_name: str, service_type: str, request: dict, timeout: float | None = None
 ) -> dict:
     """
     Call a ROS service with specified request data.
@@ -1213,7 +1213,7 @@ def call_service(
         service_name (str): The service name (e.g., '/rosapi/topics')
         service_type (str): The service type (e.g., 'rosapi/Topics')
         request (dict): Service request data as a dictionary
-        timeout (Optional[float]): Timeout in seconds. If None, uses the default timeout.
+        timeout (float | None): Timeout in seconds. If None, uses the default timeout.
 
     Returns:
         dict: Contains the service response or error information.
