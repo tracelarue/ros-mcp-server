@@ -2465,7 +2465,11 @@ def inspect_all_actions() -> dict:
     )
 )
 async def send_action_goal(
-    action_name: str, action_type: str, goal: dict, timeout: float = None, ctx: Context = None
+    action_name: str,
+    action_type: str,
+    goal: dict,
+    timeout: float | None = None,
+    ctx: Context | None = None,
 ) -> dict:
     """
     Send a goal to a ROS action server. Works only with ROS 2.
