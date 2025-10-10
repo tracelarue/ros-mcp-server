@@ -44,7 +44,7 @@ ws_manager = WebSocketManager(
 @mcp.tool(
     description=(
         "Load specifications and usage context for a verified robot model. "
-        "ONLY use if the robot model is in the verified list (use list_verified_robots first to check). "
+        "ONLY use if the robot model is in the verified list (use get_verified_robots_list first to check). "
         "Most robots won't have a spec - that's OK, connect directly using connect_to_robot instead."
     )
 )
@@ -53,7 +53,7 @@ def get_verified_robot_spec(name: str) -> dict:
     Load pre-defined specifications and additional context for a verified robot model.
 
     This is OPTIONAL - only for a small set of pre-verified robot models stored in the repository.
-    Use list_verified_robots() first to check if a spec exists.
+    Use get_verified_robots_list() first to check if a spec exists.
     If no spec exists for your robot, simply use connect_to_robot() directly.
 
     Args:
@@ -82,7 +82,7 @@ def get_verified_robot_spec(name: str) -> dict:
         "If your robot is not in this list, you can still connect to it directly using connect_to_robot."
     )
 )
-def list_verified_robots() -> dict:
+def get_verified_robots_list() -> dict:
     """
     List all pre-verified robot models that have specification files available in the repository.
 
