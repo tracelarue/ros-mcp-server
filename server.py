@@ -322,10 +322,10 @@ def get_message_details(message_type: str) -> dict:
     description=(
         "Get list of nodes that are publishing to a specific topic.\n"
         "Example:\n"
-        "get_publishers_for_topic('/cmd_vel')"
+        "get_topic_publishers('/cmd_vel')"
     )
 )
-def get_publishers_for_topic(topic: str) -> dict:
+def get_topic_publishers(topic: str) -> dict:
     """
     Get list of nodes that are publishing to a specific topic.
 
@@ -346,7 +346,7 @@ def get_publishers_for_topic(topic: str) -> dict:
         "service": "/rosapi/publishers",
         "type": "rosapi/Publishers",
         "args": {"topic": topic},
-        "id": f"get_publishers_for_topic_request_{topic.replace('/', '_')}",
+        "id": f"get_topic_publishers_request_{topic.replace('/', '_')}",
     }
 
     # Request publishers from rosbridge
@@ -371,10 +371,10 @@ def get_publishers_for_topic(topic: str) -> dict:
     description=(
         "Get list of nodes that are subscribed to a specific topic.\n"
         "Example:\n"
-        "get_subscribers_for_topic('/cmd_vel')"
+        "get_topic_subscribers('/cmd_vel')"
     )
 )
-def get_subscribers_for_topic(topic: str) -> dict:
+def get_topic_subscribers(topic: str) -> dict:
     """
     Get list of nodes that are subscribed to a specific topic.
 
@@ -395,7 +395,7 @@ def get_subscribers_for_topic(topic: str) -> dict:
         "service": "/rosapi/subscribers",
         "type": "rosapi/Subscribers",
         "args": {"topic": topic},
-        "id": f"get_subscribers_for_topic_request_{topic.replace('/', '_')}",
+        "id": f"get_topic_subscribers_request_{topic.replace('/', '_')}",
     }
 
     # Request subscribers from rosbridge
