@@ -41,13 +41,26 @@ ws_manager = WebSocketManager(
 )  # Increased default timeout for ROS operations
 
 
-@mcp.tool(description=("Get robot configuration from YAML file."))
-def get_robot_config(name: str) -> dict:
+@mcp.tool(
+    description=(
+        "Load specifications and usage context for a verified robot model. "
+        "ONLY use if the robot model is in the verified list (use list_verified_robots first to check). "
+        "Most robots won't have a spec - that's OK, connect directly using connect_to_robot instead."
+    )
+)
+def get_verified_robot_spec(name: str) -> dict:
     """
-    Get the robot configuration from the YAML file for connecting to the robot and knowing its capabilities.
+    Load pre-defined specifications and additional context for a verified robot model.
+
+    This is OPTIONAL - only for a small set of pre-verified robot models stored in the repository.
+    Use list_verified_robots() first to check if a spec exists.
+    If no spec exists for your robot, simply use connect_to_robot() directly.
+
+    Args:
+        name (str): The exact robot model name from the verified list.
 
     Returns:
-        dict: The robot configuration.
+        dict: The robot specification with type, prompts, and additional context.
     """
     robot_config = parse_robot_config(name)
 
@@ -63,21 +76,29 @@ def get_robot_config(name: str) -> dict:
 
 
 @mcp.tool(
-    description=("List all available robot specifications that can be used with get_robot_config.")
+    description=(
+        "List pre-verified robot models that have specification files with usage guidance available. "
+        "Use this to check if a robot model has additional context available before calling get_verified_robot_spec. "
+        "If your robot is not in this list, you can still connect to it directly using connect_to_robot."
+    )
 )
-def list_verified_robot_specifications() -> dict:
+def list_verified_robots() -> dict:
     """
-    Get a list of all available robot specification files.
+    List all pre-verified robot models that have specification files available in the repository.
+
+    This is a small curated list of robot models with pre-defined specifications.
+    If your robot model is not in this list, you can still connect to any ROS robot
+    using the connect_to_robot() tool directly.
 
     Returns:
-        dict: List of available robot names that can be used with get_robot_config.
+        dict: List of available verified robot model names and count.
     """
     return get_robot_specifications()
 
 
 @mcp.tool(
     description=(
-        "After getting the robot config, connect to the robot by setting the IP/port and testing connectivity."
+        "Connect to the robot by setting the IP/port. This tool also tests connectivity to confirm that the robot is reachable and the port is open."
     )
 )
 def connect_to_robot(
