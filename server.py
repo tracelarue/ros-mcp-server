@@ -11,7 +11,7 @@ from fastmcp import Context, FastMCP
 from fastmcp.utilities.types import Image
 from PIL import Image as PILImage
 
-from utils.config_utils import get_robot_specifications, parse_robot_config
+from utils.config_utils import get_verified_robot_spec_util, get_verified_robots_list_util
 from utils.network_utils import ping_ip_and_port
 from utils.websocket_manager import WebSocketManager, parse_image, parse_json
 
@@ -62,7 +62,7 @@ def get_verified_robot_spec(name: str) -> dict:
     Returns:
         dict: The robot specification with type, prompts, and additional context.
     """
-    robot_config = parse_robot_config(name)
+    robot_config = get_verified_robot_spec_util(name)
 
     if len(robot_config) > 1:
         return {
@@ -93,7 +93,7 @@ def get_verified_robots_list() -> dict:
     Returns:
         dict: List of available verified robot model names and count.
     """
-    return get_robot_specifications()
+    return get_verified_robots_list_util()
 
 
 @mcp.tool(

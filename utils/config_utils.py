@@ -26,26 +26,21 @@ def load_robot_config(robot_name: str, specs_dir: str) -> dict:
         return yaml.safe_load(file) or {}
 
 
-def parse_robot_config(name: str, specs_dir: str | None = None) -> dict:
+def get_verified_robot_spec_util(name: str) -> dict:
     """
-    Parse the robot configuration to a more accessible format.
+    Get the verified robot specification in a more accessible format.
 
     Args:
         name (str): The name of the robot.
-        specs_dir (str): Directory containing robot specification files.
-                        If None, uses the installed package's robot_specifications directory.
 
     Returns:
         dict: Parsed robot configuration with robot name as key.
     """
-    if specs_dir is None:
-        # Resolve relative to the project root (one level up from utils)
-        resolved_specs_dir = Path(__file__).parent.parent / "robot_specifications"
-    else:
-        resolved_specs_dir = Path(specs_dir)
+    # Resolve relative to the project root (one level up from utils)
+    specs_dir = Path(__file__).parent.parent / "robot_specifications"
 
     name = name.replace(" ", "_")
-    config = load_robot_config(name, str(resolved_specs_dir))
+    config = load_robot_config(name, str(specs_dir))
     parsed_config = {}
 
     # Check if the loaded config has the required fields
@@ -63,22 +58,15 @@ def parse_robot_config(name: str, specs_dir: str | None = None) -> dict:
     return parsed_config
 
 
-def get_robot_specifications(specs_dir: str | None = None) -> dict:
+def get_verified_robots_list_util() -> dict:
     """
     Get a list of all available robot specification files.
 
-    Args:
-        specs_dir (str): Directory containing robot specification files.
-                        If None, uses the installed package's robot_specifications directory.
-
     Returns:
-        dict: List of available robot names that can be used with parse_robot_config.
+        dict: List of available robot names that can be used with get_verified_robot_spec_util.
     """
-    if specs_dir is None:
-        # Resolve relative to the project root (one level up from utils)
-        specs_path = Path(__file__).parent.parent / "robot_specifications"
-    else:
-        specs_path = Path(specs_dir)
+    # Resolve relative to the project root (one level up from utils)
+    specs_path = Path(__file__).parent.parent / "robot_specifications"
 
     if not specs_path.exists():
         return {"error": f"Robot specifications directory not found: {specs_path}"}
