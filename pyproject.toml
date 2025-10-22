@@ -38,7 +38,10 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools]
 include-package-data = true
 py-modules = ["server"]
-packages = ["utils", "config"]
+packages = ["utils", "config", "robot_specifications"]
+
+[tool.setuptools.package-data]
+robot_specifications = ["*.yaml"]
 
 [tool.setuptools.data-files]
 "." = ["server.json"]
