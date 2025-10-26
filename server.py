@@ -3,6 +3,7 @@ import asyncio
 import io
 import json
 import os
+import sys
 import time
 import uuid
 from typing import Any, Dict, List, Union
@@ -2806,12 +2807,12 @@ def main():
 
     elif MCP_TRANSPORT in {"http", "streamable-http"}:
         # http and streamable-http both require host/port
-        print(f"Transport: {MCP_TRANSPORT} -> http://{MCP_HOST}:{MCP_PORT}")
+        print(f"Transport: {MCP_TRANSPORT} -> http://{MCP_HOST}:{MCP_PORT}", file=sys.stderr)
         mcp.run(transport=MCP_TRANSPORT, host=MCP_HOST, port=MCP_PORT)
 
     elif MCP_TRANSPORT == "sse":
-        print(f"Transport: {MCP_TRANSPORT} -> http://{MCP_HOST}:{MCP_PORT}")
-        print("Currently unsupported. Use 'stdio', 'http', or 'streamable-http'.")
+        print(f"Transport: {MCP_TRANSPORT} -> http://{MCP_HOST}:{MCP_PORT}", file=sys.stderr)
+        print("Currently unsupported. Use 'stdio', 'http', or 'streamable-http'.", file=sys.stderr)
         mcp.run(transport=MCP_TRANSPORT, host=MCP_HOST, port=MCP_PORT)
 
     else:
