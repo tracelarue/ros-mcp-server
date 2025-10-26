@@ -133,7 +133,9 @@ class WebSocketManager:
                 try:
                     url = f"ws://{self.ip}:{self.port}"
                     self.ws = websocket.create_connection(url, timeout=self.default_timeout)
-                    print(f"[WebSocket] Connected ({self.default_timeout}s timeout)", file=sys.stderr)
+                    print(
+                        f"[WebSocket] Connected ({self.default_timeout}s timeout)", file=sys.stderr
+                    )
                     return None  # no error
                 except Exception as e:
                     error_msg = f"[WebSocket] Connection error: {e}"
