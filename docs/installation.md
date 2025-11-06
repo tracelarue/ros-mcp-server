@@ -3,7 +3,9 @@
 > ⚠️ **Prerequisite**: You need either ROS installed locally on your machine OR access over the network to a robot/computer with ROS installed. This MCP server connects to ROS systems on a robot, so a running ROS environment is required.
 
 Installation includes the following steps:
-- Install the MCP server using pip
+- Install the MCP server
+  - Clone this repository
+  - Install uv (Python virtual environment manager)
 - Install and configure the Language Model Client
   - Install any language model client (We demonstrate with Claude Desktop)
   - Configure the client to run the MCP server and connect automatically on launch.
@@ -15,60 +17,36 @@ Below are detailed instructions for each of these steps.
 ---
 # 1. Install the MCP server (On the host machine where the LLM will be running)
 
-Install using pipx (recommended for isolated installation):
+## 1.1. Clone the Repository
 
 ```bash
-# Install pipx if you don't have it
-pip install pipx
-
-# Install ros-mcp using pipx
-pipx install ros-mcp
+git clone https://github.com/robotmcp/ros-mcp-server.git
 ```
-<details>
-<summary><strong>Why pipx?</strong></summary>
 
-**Benefits of pipx:**
-- Isolated installation in its own virtual environment
-- Won't conflict with other Python packages
-- Easy to uninstall: `pipx uninstall ros-mcp`
-- Automatic PATH management
+> ⚠️ **WSL Users**: Clone the repository in your WSL home directory (e.g., `/home/username/`) instead of the Windows filesystem mount (e.g., `/mnt/c/Users/username/`). Using the native Linux filesystem provides better performance and avoids potential permission issues.
+
+Note the **absolute path** to the cloned directory — you'll need this later when configuring your language model client.
+
+---
+
+## 1.2. Install UV (Python Virtual Environment Manager)
+
+You can install [`uv`](https://github.com/astral-sh/uv) using one of the following methods:
+
+<details>
+<summary><strong>Option A: Shell installer</strong></summary>
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
 
 </details>
 
 <details>
-<summary><strong>Alternative Installation Options</strong></summary>
-
-### Option A: Install using pip
-For users who prefer traditional pip installation:
+<summary><strong>Option B: Using pip</strong></summary>
 
 ```bash
-pip install ros-mcp
-```
-> **⚠️ Important**: This package requires pip version 23.0 or higher. Check your pip version with `pip --version` and upgrade if needed:
-```bash
-python3 -m pip install --upgrade pip
-```
-
-### Option B: Install from Source
-For developers or advanced users who need to modify the source code, see [Installation from Source](installation-from-source.md).
-
-### Option C: Install from Source using pipx
-For developers who want to install from source but still use pipx for isolation:
-
-```bash
-# Clone the repository
-git clone https://github.com/robotmcp/ros-mcp-server.git
-cd ros-mcp-server
-
-# Install from source using pipx
-pipx install .
-```
-
-> **Note**: This also works with regular pip: `pip install .`
-
-> **⚠️ Important**: This package requires pip version 23.0 or higher. Check your pip version with `pip --version` and upgrade if needed:
-```bash
-python3 -m pip install --upgrade pip
+pip install uv
 ```
 
 </details>
@@ -116,16 +94,19 @@ This will have Claude running on Windows and the MCP server running on WSL. We a
 ~/.config/Claude/claude_desktop_config.json
 ```
 
-- Add the following to the `"mcpServers"` section of the JSON file:
+- Add the following to the `"mcpServers"` section of the JSON file
+- Make sure to replace `<ABSOLUTE_PATH>` with the **full absolute path** to your `ros-mcp-server` folder (note: `~` for home directory may not work in JSON files):
 
 ```json
 {
   "mcpServers": {
     "ros-mcp-server": {
-      "command": "bash",
+      "command": "uv",
       "args": [
-        "-lc", 
-        "ros-mcp --transport=stdio"
+        "--directory",
+        "/<ABSOLUTE_PATH>/ros-mcp-server",
+        "run",
+        "server.py"
       ]
     }
   }
@@ -144,16 +125,19 @@ This will have Claude running on Windows and the MCP server running on WSL. We a
 ~/Library/Application\ Support/Claude/claude_desktop_config.json
 ```
 
-- Add the following to the `"mcpServers"` section of the JSON file:
+- Add the following to the `"mcpServers"` section of the JSON file
+- Make sure to replace `<ABSOLUTE_PATH>` with the **full absolute path** to your `ros-mcp-server` folder (note: `~` for home directory may not work in JSON files):
 
 ```json
 {
-  "mcpServers":{
+  "mcpServers": {
     "ros-mcp-server": {
-      "command": "zsh",
+      "command": "uv",
       "args": [
-        "-lc", 
-        "ros-mcp --transport=stdio"
+        "--directory",
+        "/<ABSOLUTE_PATH>/ros-mcp-server",
+        "run",
+        "server.py"
       ]
     }
   }
@@ -172,21 +156,24 @@ This will have Claude running on Windows and the MCP server running on WSL. We a
 ~/.config/Claude/claude_desktop_config.json
 ```
 
-- Add the following to the `"mcpServers"` section of the JSON file:
+- Add the following to the `"mcpServers"` section of the JSON file
+- Make sure to replace `<ABSOLUTE_PATH>` with the **full absolute path** to your `ros-mcp-server` folder (note: `~` for home directory may not work in JSON files):
+- Set the **full WSL path** to your `uv` installation (e.g., `/home/youruser/.local/bin/uv`)
 - Use the correct **WSL distribution name** (e.g., `"Ubuntu-22.04"`)
 
 ```json
 {
-  "mcpServers":{
+  "mcpServers": {
     "ros-mcp-server": {
       "command": "wsl",
-        "args": [
-          "-d", 
-          "Ubuntu-22.04", 
-          "bash", 
-          "-lc", 
-          "ros-mcp --transport=stdio"
-        ]
+      "args": [
+        "-d", "Ubuntu-22.04",
+        "/home/<YOUR_USER>/.local/bin/uv",
+        "--directory",
+        "/<ABSOLUTE_PATH>/ros-mcp-server",
+        "run",
+        "server.py"
+      ]
     }
   }
 }
@@ -209,7 +196,7 @@ For HTTP transport, the configuration is the same across all platforms. First st
 ```bash
 cd /<ABSOLUTE_PATH>/ros-mcp-server
 # Using command line arguments (recommended)
-ros-mcp --transport streamable-http --host 127.0.0.1 --port 9000
+uv run server.py --transport streamable-http --host 127.0.0.1 --port 9000
 
 # Or using environment variables (legacy)
 export MCP_TRANSPORT=streamable-http
@@ -393,22 +380,24 @@ What topics and services do you see on the robot?
 ---
 
 # 5. Alternate Clients (ChatGPT, Gemini, Cursor)
-<details>
-<summary><strong>Examples and setup instructions for other LLM Hosts and Clients</strong></summary>
 
-## 5.1. Cursor IDE
+<details>
+<summary><strong> Examples and setup instructions for other LLMs</strong></summary>
+
+#### 3.2.1. Cursor IDE
 For detailed Cursor setup instructions, see our [Cursor Tutorial](../examples/7_cursor/README.md).
 
-## 5.2. ChatGPT
+#### 3.2.2. ChatGPT
 For detailed ChatGPT setup instructions, see our [ChatGPT Tutorial](../examples/6_chatgpt/README.md).
 
-## 5.3. Google Gemini
+#### 3.2.3. Google Gemini
 For detailed Gemini setup instructions, see our [Gemini Tutorial](../examples/2_gemini/README.md).
 
-## 5.4. Custom MCP Client
-You can also use the MCP server directly in your Python code. 
 <details>
-<summary>Here is a python example of how to integrate it programmatically</summary>
+<summary><strong>Custom MCP Client</strong></summary>
+
+#### 3.2.1. Using the MCP Server Programmatically
+You can also use the MCP server directly in your Python code:
 
 ```python
 from mcp import ClientSession, StdioServerParameters
@@ -436,10 +425,7 @@ async def main():
 
 # 6. Troubleshooting
 
-<details>
-<summary><strong>6.1. Common Issues</strong></summary>
-
-Here are some frequently encountered issues and their solutions:
+## 6.1. Common Issues
 
 <details>
 <summary><strong>MCP Server Not Appearing in Client</strong></summary>
@@ -531,8 +517,30 @@ curl http://localhost:9000
 
 </details>
 
+## 6.2. Debug Commands
+
+```bash
+# Test ROS connectivity
+ros2 topic list  # For ROS 2
+rostopic list   # For ROS 1
+
+# Test rosbridge
+curl -I http://localhost:9090
+
+# Test MCP server manually
+cd /<ABSOLUTE_PATH>/ros-mcp-server
+uv run server.py
+
+# Check processes
+ps aux | grep rosbridge
+ps aux | grep ros-mcp
+```
+
+## 6.3. Getting Help
+
 <details>
 <summary><strong>If you're still having issues:</strong></summary>
+
 
 1. **Check the logs**: Look for error messages in your LLM client and MCP server logs
 2. **Test with turtlesim**: Try the [turtlesim tutorial](../examples/1_turtlesim/README.md) to verify basic functionality
@@ -544,37 +552,4 @@ curl http://localhost:9000
    - Steps to reproduce
 
 </details>
-
----
-
-</details>
-
-<details>
-<summary><strong>6.2. Debug Commands</strong></summary>
-
-Test ROS connectivity
-```bash
-ros2 topic list  # For ROS 2
-rostopic list   # For ROS 1
-```
-
-Test rosbridge
-```bash
-curl -I http://localhost:9090
-```
-
-Test MCP server manually
-```bash
-ros-mcp --transport=stdio
-```
-
-Check running processes
-```bash
-ps aux | grep rosbridge
-ps aux | grep ros-mcp
-```
-
-</details>
-
-
 ---
